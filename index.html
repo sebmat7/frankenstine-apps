@@ -260,8 +260,26 @@ body {
   background: rgba(255,255,255,.2);
 }
 
-/* ── Hidden YT player ── */
-#ytPlayer { position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+/* ── YT player in Now Playing screen ── */
+.yt-wrap {
+  width: 100%; flex: 0 0 auto;
+  background: #000;
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+  transition: height .25s ease;
+}
+.yt-wrap.visible { height: 140px; }
+.yt-wrap.hidden  { height: 0; }
+#ytPlayer { width: 100%; height: 100%; border: none; display: block; }
+.yt-toggle {
+  position: absolute; bottom: 4px; right: 6px;
+  background: rgba(0,0,0,.6); color: rgba(255,255,255,.7);
+  border: none; border-radius: 6px; font-size: 10px; padding: 2px 7px;
+  cursor: pointer; font-family: inherit; z-index: 2;
+}
+/* hidden audio-only ghost (used when video hidden) */
+#ytGhost { position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
 /* ── Home button (outside wheel) ── */
 .home-btn-wrap {
@@ -345,14 +363,21 @@ body {
         </div>
       </div>
 
-      <!-- NOW PLAYING cover -->
+      <!-- NOW PLAYING -->
       <div class="view" id="view-nowplaying">
-        <div class="view-header">Now Playing</div>
-        <div class="cover-view">
-          <div class="cover-art">🎵</div>
-          <div class="cover-title" id="np-title">—</div>
-          <div class="cover-sub"   id="np-sub">—</div>
-          <div class="progress-wrap"><div class="progress-bar" id="np-prog"></div></div>
+        <div class="view-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Now Playing</span>
+          <button onclick="toggleVideoVisible()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:10px;padding:2px 9px;border-radius:999px;cursor:pointer;font-family:inherit;" id="vid-toggle-btn">Hide Video</button>
+        </div>
+        <!-- YouTube player embedded here -->
+        <div class="yt-wrap visible" id="ytWrap">
+          <div id="ytPlayer"></div>
+        </div>
+        <!-- Track info below video -->
+        <div class="cover-view" style="flex:1;padding:8px 16px;gap:6px;">
+          <div class="cover-title" id="np-title" style="font-size:13px;">—</div>
+          <div class="cover-sub"   id="np-sub"   style="font-size:11px;">—</div>
+          <div class="progress-wrap" style="margin-top:4px;"><div class="progress-bar" id="np-prog"></div></div>
         </div>
       </div>
 
@@ -401,8 +426,6 @@ body {
   </div>
 </div>
 
-<!-- Hidden YT player -->
-<div id="ytPlayer"></div>
 
 <script>
 // ─── Config ────────────────────────────────────────────────────────────────
@@ -622,7 +645,7 @@ function playVideo(item) {
   if (!window.YT?.Player) { setTimeout(() => playVideo(item), 800); return; }
   S.player = new YT.Player('ytPlayer', {
     height: '1', width: '1', videoId: vid,
-    playerVars: { controls: 0, playsinline: 1, rel: 0, vq: 'small' },
+    playerVars: { controls: 1, playsinline: 1, rel: 0, vq: 'small' },
     events: {
       onReady(e) { S.playerReady = true; e.target.setPlaybackQuality('small'); e.target.playVideo(); },
       onStateChange(e) {
@@ -808,6 +831,16 @@ document.addEventListener('touchmove', e => e.preventDefault(), { passive: false
 // ─── Util ───────────────────────────────────────────────────────────────────
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Video visible toggle ────────────────────────────────────────────────────
+let videoVisible = true;
+function toggleVideoVisible() {
+  videoVisible = !videoVisible;
+  const wrap = $('ytWrap');
+  const btn  = $('vid-toggle-btn');
+  wrap.className = 'yt-wrap ' + (videoVisible ? 'visible' : 'hidden');
+  btn.textContent = videoVisible ? 'Hide Video' : 'Show Video';
 }
 
 // ─── Init ───────────────────────────────────────────────────────────────────
