@@ -1,573 +1,757 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>iPod Music App - Version 4</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>ClickWheel — v5</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <style>
-  :root{
-    --bg-a:#0a0d14;
-    --bg-b:#141a2a;
-    --screen:#080b12;
-    --screen-2:#0f1521;
-    --text:#f3f6fb;
-    --muted:#9ba6bb;
-    --line:rgba(255,255,255,.09);
-    --accent:#64d2ff;
-    --accent-2:#9b7bff;
-    --good:#78f2b3;
-    --bad:#ff8d8d;
-    --wheel:#f3efe8;
-    --wheel-text:#2a2f36;
-    --card:#1a2234;
-    --card-active:#2d6cff;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0}
-  body{
-    color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:
-      radial-gradient(circle at top left, rgba(100,210,255,.22), transparent 30%),
-      radial-gradient(circle at bottom right, rgba(155,123,255,.22), transparent 28%),
-      linear-gradient(160deg,var(--bg-a),var(--bg-b) 60%,#05070c);
-  }
-  .layout{
-    min-height:100vh;
-    display:grid;
-    grid-template-columns:minmax(330px,420px) minmax(300px,440px);
-    gap:24px;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-  }
-  /* ── Device ── */
-  .device{width:min(100%,390px);margin:0 auto;filter:drop-shadow(0 24px 60px rgba(0,0,0,.5))}
-  .shell{
-    position:relative;border-radius:44px;padding:14px;
-    background:linear-gradient(145deg,#f2e7d2,#b9aa8b 72%,#937f61);
-    box-shadow:inset 0 0 0 2px rgba(255,255,255,.32);
-  }
-  .bezel{position:absolute;inset:12px;border-radius:36px;border:1px solid rgba(0,0,0,.18);pointer-events:none}
-  .screen{
-    position:relative;height:356px;border-radius:24px;overflow:hidden;
-    background:linear-gradient(180deg,var(--screen),var(--screen-2));
-    border:7px solid #171b22;box-shadow:inset 0 0 30px rgba(0,0,0,.6);
-  }
-  .status{
-    display:flex;align-items:center;justify-content:space-between;gap:8px;
-    padding:10px 12px;font-size:12px;color:var(--muted);
-    border-bottom:1px solid var(--line);letter-spacing:.02em;
-  }
-  .status strong{color:var(--text);font-weight:700}
-  .content{height:calc(100% - 42px);overflow-y:auto;overflow-x:hidden;padding:14px}
-  /* ── Screen content ── */
-  .hero{display:grid;gap:10px;margin-bottom:14px}
-  .title{margin:0;font-size:26px;line-height:1.04;letter-spacing:-.03em}
-  .subtitle{margin:0;color:var(--muted);line-height:1.45;font-size:14px}
-  .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--muted);font-size:12px}
-  .menu{display:grid;gap:8px}
-  .menu-item{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
-    padding:11px 12px;border-radius:14px;background:var(--card);
-    border:1px solid rgba(255,255,255,.06);cursor:pointer;
-    transition:transform .15s ease, background .15s ease, border-color .15s ease;
-  }
-  .menu-item:hover{transform:translateY(-1px)}
-  .menu-item.active{background:linear-gradient(90deg,var(--card-active),#1743a4);border-color:rgba(255,255,255,.14);color:#fff}
-  .menu-item .left{display:flex;align-items:center;gap:10px;min-width:0}
-  .badge{min-width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:700;flex:0 0 auto}
-  .menu-item.active .badge{background:rgba(255,255,255,.18)}
-  .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px;font-weight:650}
-  .chev{color:currentColor;opacity:.8}
-  /* ── Persistent player area ── */
-  .player-wrap{display:none;flex-direction:column;gap:10px;padding:14px;border-top:1px solid var(--line)}
-  .player-wrap.visible{display:flex}
-  .cover-row{display:flex;gap:12px;align-items:center}
-  .art{width:64px;height:64px;border-radius:14px;background:linear-gradient(145deg,#64d2ff,#9b7bff);box-shadow:0 10px 18px rgba(0,0,0,.28);flex:0 0 auto}
-  .track-info h3{margin:0 0 2px;font-size:14px;line-height:1.25}
-  .track-info p{margin:0;font-size:12px;color:var(--muted)}
-  /* hidden video — audio only mode: tiny iframe keeps playback alive */
-  #ytPlayer{width:1px;height:1px;position:absolute;opacity:0;pointer-events:none}
-  /* ── Click Wheel ── */
-  .wheel-wrap{display:grid;place-items:center;margin-top:16px}
-  .wheel{position:relative;width:234px;height:234px;border-radius:50%;background:var(--wheel);box-shadow:inset 0 0 14px rgba(0,0,0,.2),0 12px 30px rgba(0,0,0,.22);user-select:none}
-  .wheel button{position:absolute;border:0;background:transparent;color:var(--wheel-text);font-weight:900;cursor:pointer}
-  .wheel .menu-btn{top:20px;left:50%;transform:translateX(-50%);font-size:15px}
-  .wheel .prev{left:20px;top:50%;transform:translateY(-50%);font-size:28px}
-  .wheel .next{right:20px;top:50%;transform:translateY(-50%);font-size:28px}
-  .wheel .play{bottom:20px;left:50%;transform:translateX(-50%);font-size:16px}
-  .wheel .center{width:86px;height:86px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,#e2e2e2,#b5b5b5)!important;box-shadow:inset 0 0 10px rgba(0,0,0,.18)}
-  /* ── Side panel ── */
-  .panel{
-    width:min(100%,440px);margin:0 auto;padding:22px;border-radius:26px;
-    background:rgba(15,18,27,.68);border:1px solid rgba(255,255,255,.1);
-    backdrop-filter:blur(16px);box-shadow:0 20px 50px rgba(0,0,0,.28);
-  }
-  .panel h1{margin:0 0 8px;font-size:26px;letter-spacing:-.03em}
-  .panel p{margin:0 0 14px;color:#d7ddeb;line-height:1.5;font-size:14px}
-  .field{margin-bottom:10px}
-  .field label{display:block;margin:0 0 6px;font-size:12px;color:#c9d3e2;text-transform:uppercase;letter-spacing:.08em}
-  input{width:100%;padding:12px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(4,6,12,.85);color:#fff;outline:none;font:inherit}
-  input:focus{border-color:rgba(100,210,255,.7);box-shadow:0 0 0 3px rgba(100,210,255,.12)}
-  .actions,.themes{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-  button{appearance:none;border:0;border-radius:999px;padding:11px 14px;background:#fff;color:#111827;font-weight:750;cursor:pointer;font:inherit}
-  button.secondary{background:rgba(255,255,255,.08);color:#f2f5fb;border:1px solid rgba(255,255,255,.12)}
-  button:hover{transform:translateY(-1px)}
-  .section{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-  .message{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);font-size:13px;line-height:1.45}
-  .message.good{color:var(--good)}
-  .message.bad{color:var(--bad)}
-  .help{margin-top:12px;color:#aeb8ca;font-size:12px;line-height:1.6}
-  /* ── Step indicator ── */
-  .steps{display:grid;gap:6px;margin-bottom:14px}
-  .step{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:13px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04)}
-  .step-num{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:rgba(255,255,255,.12);flex:0 0 auto}
-  .step.done .step-num{background:var(--good);color:#000}
-  .step.active .step-num{background:var(--accent);color:#000}
-  /* ── Themes ── */
-  .theme-light{--bg-a:#dce8f7;--bg-b:#f7fafc;--screen:#ffffff;--screen-2:#eef4fb;--text:#0f172a;--muted:#526176;--card:#eff4fb;--card-active:#0f5bd8;--line:rgba(15,23,42,.1)}
-  .theme-sunset{--bg-a:#2a1132;--bg-b:#120d24;--accent:#ff8f5b;--accent-2:#ff5eb6}
-  .theme-mint{--bg-a:#041418;--bg-b:#071f1d;--accent:#67e8a8;--accent-2:#4cc9f0}
-  /* ── Responsive ── */
-  @media(max-width:920px){.layout{grid-template-columns:1fr;justify-items:center}.panel{order:2}}
+:root {
+  --shell-w: 340px;
+  --screen-h: 320px;
+  --wheel-d: 260px;
+  --bg: #0c0e14;
+  --shell: #1a1d26;
+  --shell-hi: #23273a;
+  --screen-bg: #05070f;
+  --text: #eef1f8;
+  --muted: #6b7590;
+  --accent: #4f9cf9;
+  --accent-2: #9b7bff;
+  --good: #5edb97;
+  --bad: #f97070;
+  --row: #141720;
+  --row-active: #1e3a6e;
+  --row-border: rgba(255,255,255,.05);
+  --wheel-face: #1c1f2e;
+  --wheel-ring: #2a2e40;
+  --wheel-btn: #eef1f8;
+  --wheel-center: #262a3d;
+  --line: rgba(255,255,255,.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; width: 100%;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── Shell ── */
+.ipod {
+  width: var(--shell-w);
+  background: linear-gradient(175deg, var(--shell-hi) 0%, var(--shell) 50%, #111420 100%);
+  border-radius: 40px;
+  padding: 18px 18px 24px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.08),
+    0 30px 80px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+/* ── Screen ── */
+.screen-wrap {
+  width: 100%;
+  height: var(--screen-h);
+  border-radius: 20px;
+  background: var(--screen-bg);
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: inset 0 0 40px rgba(0,0,0,.6), 0 2px 10px rgba(0,0,0,.4);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px 6px;
+  font-size: 11px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  letter-spacing: .02em;
+}
+.status-bar .app-name { color: var(--text); font-weight: 600; font-size: 12px; }
+.status-bar .auth-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--bad); display: inline-block; margin-right: 5px;
+  vertical-align: middle;
+}
+.status-bar .auth-dot.on { background: var(--good); }
+
+/* Screen content — no scrolling, wheel does it */
+.screen-content {
+  height: calc(var(--screen-h) - 34px);
+  overflow: hidden;
+  position: relative;
+}
+
+.view {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease;
+}
+.view.active { opacity: 1; pointer-events: all; }
+
+/* View header */
+.view-header {
+  padding: 8px 12px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+/* Menu rows */
+.menu-list {
+  flex: 1; overflow: hidden;
+  display: flex; flex-direction: column;
+  gap: 1px;
+  padding: 4px 0;
+}
+.menu-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px;
+  font-size: 14px;
+  background: transparent;
+  border-left: 2px solid transparent;
+  transition: background .1s, border-color .1s;
+  flex: 0 0 auto;
+  cursor: default;
+}
+.menu-row.sel {
+  background: rgba(79,156,249,.13);
+  border-left-color: var(--accent);
+  color: #fff;
+}
+.menu-row .row-left { display: flex; align-items: center; gap: 9px; }
+.menu-row .row-icon {
+  width: 24px; height: 24px; border-radius: 7px;
+  display: grid; place-items: center;
+  font-size: 13px;
+  background: rgba(255,255,255,.07);
+  flex: 0 0 auto;
+}
+.menu-row .row-chev { color: var(--muted); font-size: 12px; }
+
+/* Now playing bar */
+.now-bar {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+  background: rgba(0,0,0,.3);
+  font-size: 11px;
+  color: var(--muted);
+  min-height: 32px;
+}
+.now-bar .track-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 12px; }
+.now-bar .play-state { color: var(--accent); font-size: 14px; }
+
+/* Playlist rows */
+.playlist-list { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 1px; padding: 4px 0; }
+.playlist-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 12px; font-size: 13px; flex: 0 0 auto;
+  border-left: 2px solid transparent;
+}
+.playlist-row.sel { background: rgba(79,156,249,.13); border-left-color: var(--accent); color: #fff; }
+.playlist-row .track-num { color: var(--muted); font-size: 11px; min-width: 22px; text-align: right; }
+.playlist-row .track-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Settings form */
+.settings-body { flex: 1; overflow: hidden; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.setting-row { display: flex; flex-direction: column; gap: 4px; }
+.setting-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.setting-val {
+  font-size: 12px; color: var(--text);
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.setting-msg { font-size: 12px; padding: 7px 10px; border-radius: 8px; }
+.setting-msg.good { color: var(--good); background: rgba(94,219,151,.08); }
+.setting-msg.bad  { color: var(--bad);  background: rgba(249,112,112,.08); }
+.setting-hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.setting-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.setting-btn {
+  padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07); color: var(--text); font-size: 12px; cursor: pointer;
+  font-family: inherit;
+}
+.setting-btn:active { background: rgba(255,255,255,.14); }
+.setting-btn.primary { background: var(--accent); color: #000; border-color: transparent; font-weight: 600; }
+
+/* Cover art view */
+.cover-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
+.cover-art {
+  width: 110px; height: 110px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 12px 30px rgba(0,0,0,.5);
+  display: grid; place-items: center; font-size: 40px;
+}
+.cover-title { font-size: 15px; font-weight: 700; text-align: center; }
+.cover-sub   { font-size: 12px; color: var(--muted); text-align: center; }
+.progress-wrap { width: 100%; height: 3px; background: rgba(255,255,255,.1); border-radius: 2px; margin-top: 4px; }
+.progress-bar  { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 1s linear; }
+
+/* ── Wheel ── */
+.wheel-wrap {
+  position: relative;
+  width: var(--wheel-d);
+  height: var(--wheel-d);
+  flex: 0 0 auto;
+}
+.wheel-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #2e3350, var(--wheel-ring) 70%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.07),
+    0 8px 32px rgba(0,0,0,.6),
+    inset 0 2px 4px rgba(255,255,255,.08),
+    inset 0 -2px 4px rgba(0,0,0,.4);
+}
+.wheel-label {
+  position: absolute; display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.55); font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  pointer-events: none; text-transform: uppercase;
+}
+.wheel-label.top    { top: 16px;  left: 50%; transform: translateX(-50%); }
+.wheel-label.left   { left: 14px; top: 50%;  transform: translateY(-50%); font-size: 18px; }
+.wheel-label.right  { right: 14px;top: 50%;  transform: translateY(-50%); font-size: 18px; }
+.wheel-label.bottom { bottom: 16px; left: 50%; transform: translateX(-50%); }
+
+.wheel-center {
+  position: absolute;
+  width: 96px; height: 96px;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #31364d, var(--wheel-center) 80%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.09),
+    inset 0 2px 3px rgba(255,255,255,.08),
+    0 4px 14px rgba(0,0,0,.5);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background .12s;
+}
+.wheel-center:active { background: radial-gradient(circle at 35% 30%, #3d4460, #2a2f45 80%); }
+.wheel-center-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.2);
+}
+
+/* ── Hidden YT player ── */
+#ytPlayer { position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* ── Responsive: scale the whole iPod ── */
+@media (max-height: 720px) {
+  :root { --shell-w: 300px; --screen-h: 270px; --wheel-d: 230px; }
+}
+@media (max-height: 600px) {
+  :root { --shell-w: 270px; --screen-h: 240px; --wheel-d: 200px; }
+}
 </style>
 </head>
 <body>
-<div class="layout" id="themeRoot">
 
-  <!-- ── Device ── -->
-  <section class="device">
-    <div class="shell">
-      <div class="bezel"></div>
-      <div class="screen">
-        <div class="status">
-          <span><strong>ClickWheel</strong></span>
-          <span id="authState">Not connected</span>
-        </div>
-        <div class="content" id="content"></div>
-      </div>
+<div class="ipod" id="ipod">
+  <!-- Screen -->
+  <div class="screen-wrap">
+    <div class="status-bar">
+      <span class="app-name">ClickWheel</span>
+      <span><span class="auth-dot" id="authDot"></span><span id="authLabel">Not signed in</span></span>
     </div>
+    <div class="screen-content" id="screenContent">
 
-    <!-- persistent player sits OUTSIDE .screen so navigating never destroys it -->
-    <div class="player-wrap" id="playerWrap">
-      <div class="cover-row">
-        <div class="art"></div>
-        <div class="track-info">
-          <h3 id="nowTitle">Nothing playing</h3>
-          <p id="nowSub">Select a track from a playlist</p>
+      <!-- HOME -->
+      <div class="view active" id="view-home">
+        <div class="menu-list" id="home-list"></div>
+        <div class="now-bar" id="now-bar">
+          <span class="play-state" id="play-icon">♪</span>
+          <span class="track-name" id="now-title">Nothing playing</span>
         </div>
       </div>
-      <div id="ytPlayer"></div>
-    </div>
 
-    <div class="wheel-wrap">
-      <div class="wheel">
-        <button class="menu-btn" type="button" onclick="goHome()">MENU</button>
-        <button class="prev"     type="button" onclick="move(-1)">&#x2039;</button>
-        <button class="next"     type="button" onclick="move(1)">&#x203A;</button>
-        <button class="play"     type="button" onclick="togglePlayback()">PLAY</button>
-        <button class="center"   type="button" onclick="openCurrent()"></button>
+      <!-- PLAYLISTS -->
+      <div class="view" id="view-playlists">
+        <div class="view-header">Playlists</div>
+        <div class="menu-list" id="playlist-list"></div>
+        <div class="now-bar">
+          <span class="play-state" id="play-icon2">♪</span>
+          <span class="track-name" id="now-title2">Nothing playing</span>
+        </div>
       </div>
+
+      <!-- TRACKS -->
+      <div class="view" id="view-tracks">
+        <div class="view-header" id="tracks-header">Tracks</div>
+        <div class="playlist-list" id="tracks-list"></div>
+        <div class="now-bar">
+          <span class="play-state">▶</span>
+          <span class="track-name" id="now-title3">Nothing playing</span>
+        </div>
+      </div>
+
+      <!-- NOW PLAYING cover -->
+      <div class="view" id="view-nowplaying">
+        <div class="view-header">Now Playing</div>
+        <div class="cover-view">
+          <div class="cover-art">🎵</div>
+          <div class="cover-title" id="np-title">—</div>
+          <div class="cover-sub"   id="np-sub">—</div>
+          <div class="progress-wrap"><div class="progress-bar" id="np-prog"></div></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="view" id="view-settings">
+        <div class="view-header">Settings</div>
+        <div class="settings-body">
+          <div class="setting-row">
+            <div class="setting-label">Google OAuth Client ID</div>
+            <div class="setting-val" id="cid-display">Using default</div>
+          </div>
+          <div class="setting-actions">
+            <button class="setting-btn primary" onclick="doSignIn()">Sign in with Google</button>
+            <button class="setting-btn" onclick="doLoadPlaylists()">Load playlists</button>
+          </div>
+          <div class="setting-msg bad" id="settings-msg">Not connected.</div>
+          <div class="setting-hint">
+            After signing in, press MENU and go to Playlists.
+          </div>
+        </div>
+      </div>
+
     </div>
-  </section>
+  </div>
 
-  <!-- ── Side panel ── -->
-  <aside class="panel">
-    <h1>iPod Music App v4</h1>
-    <p>Sign in with Google to load your YouTube playlists — then browse and play with the click wheel.</p>
-
-    <!-- Step tracker -->
-    <div class="steps">
-      <div class="step" id="step1"><div class="step-num">1</div> Save your OAuth Client ID</div>
-      <div class="step" id="step2"><div class="step-num">2</div> Sign in with Google</div>
-      <div class="step" id="step3"><div class="step-num">3</div> Load playlists</div>
+  <!-- Click Wheel -->
+  <div class="wheel-wrap" id="wheelWrap">
+    <div class="wheel-ring" id="wheelRing"></div>
+    <div class="wheel-label top">MENU</div>
+    <div class="wheel-label left">&#x2039;</div>
+    <div class="wheel-label right">&#x203A;</div>
+    <div class="wheel-label bottom">PLAY</div>
+    <div class="wheel-center" id="wheelCenter">
+      <div class="wheel-center-dot"></div>
     </div>
-
-    <div class="field">
-      <label for="clientId">Google OAuth Client ID</label>
-      <input id="clientId" autocomplete="off" placeholder="626644774647-….apps.googleusercontent.com" />
-    </div>
-    <div class="field">
-      <label for="apiKey">YouTube Data API Key <span style="opacity:.6">(optional)</span></label>
-      <input id="apiKey" autocomplete="off" placeholder="AIza..." />
-    </div>
-
-    <div class="actions">
-      <button type="button" onclick="saveConfig()">Save keys</button>
-      <button type="button" class="secondary" onclick="signIn()">Sign in with Google</button>
-      <button type="button" class="secondary" onclick="loadPlaylists()">Load playlists</button>
-    </div>
-
-    <div id="setupMessage" class="message bad">Not connected yet.</div>
-
-    <!-- Setup help -->
-    <div class="help section">
-      <strong>One-time Google Cloud setup (if sign-in fails):</strong><br>
-      1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent)">console.cloud.google.com/apis/credentials</a><br>
-      2. Open your OAuth 2.0 Client ID<br>
-      3. Under <em>Authorized JavaScript origins</em> add: <code>http://localhost:8123</code><br>
-      4. Under <em>Authorized redirect URIs</em> add: <code>http://localhost:8123/</code> and <code>http://localhost:8123/ipod%20app%20Version%204.html</code><br>
-      5. Save → then click Sign in above.
-    </div>
-
-    <!-- Themes -->
-    <div class="themes section">
-      <button type="button" class="secondary" onclick="setTheme('dark')">Dark</button>
-      <button type="button" class="secondary" onclick="setTheme('light')">Light</button>
-      <button type="button" class="secondary" onclick="setTheme('sunset')">Sunset</button>
-      <button type="button" class="secondary" onclick="setTheme('mint')">Mint</button>
-    </div>
-  </aside>
-
+  </div>
 </div>
 
+<!-- Hidden YT player -->
+<div id="ytPlayer"></div>
+
 <script>
-// ─── Config ───────────────────────────────────────────────────────────────
-const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
-const DEFAULT_CLIENT_ID = '626644774647-q2rpcto9th4ec2f784v9htc2pm6e8shc.apps.googleusercontent.com';
-const SK = { cid:'ipod_v4_cid', key:'ipod_v4_key', theme:'ipod_v4_theme' };
+// ─── Config ────────────────────────────────────────────────────────────────
+const CLIENT_ID = '626644774647-q2rpcto9th4ec2f784v9htc2pm6e8shc.apps.googleusercontent.com';
+const SCOPE     = 'https://www.googleapis.com/auth/youtube.readonly';
 
-const DEFAULT_MENU = [
-  { title:'YouTube Music', icon:'YT' },
-  { title:'Playlists',     icon:'PL' },
-  { title:'Search',        icon:'SR' },
-  { title:'Themes',        icon:'TH' },
-  { title:'Settings',      icon:'ST' },
-];
-
-// ─── State ────────────────────────────────────────────────────────────────
-const state = {
-  view:'home', menu:[...DEFAULT_MENU], selected:0,
-  playlists:[], videos:[], videoSelected:0,
-  activePlaylistTitle:'',
-  accessToken:'',
-  tokenClient:null,
-  player:null, playerReady:false,
-  currentVideoId:''
+// ─── State ─────────────────────────────────────────────────────────────────
+const S = {
+  token: '',
+  playlists: [],
+  videos: [],
+  selPlaylist: 0,
+  selTrack: 0,
+  selHome: 0,
+  currentView: 'home',
+  player: null,
+  playerReady: false,
+  playing: false,
+  currentTitle: '',
+  currentSub: '',
 };
 
-// ─── DOM refs ─────────────────────────────────────────────────────────────
+const HOME_MENU = [
+  { id:'nowplaying', label:'Now Playing', icon:'▶' },
+  { id:'playlists',  label:'Playlists',   icon:'♫' },
+  { id:'settings',   label:'Settings',    icon:'⚙' },
+];
+
+// ─── DOM refs ──────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const content      = $('content');
-const authState    = $('authState');
-const setupMessage = $('setupMessage');
-const cidInput     = $('clientId');
-const keyInput     = $('apiKey');
-const themeRoot    = $('themeRoot');
-const playerWrap   = $('playerWrap');
 
-// ─── Config helpers ───────────────────────────────────────────────────────
-function saveConfig(){
-  try{ localStorage.setItem(SK.cid, cidInput.value.trim()); }catch(_){}
-  try{ localStorage.setItem(SK.key, keyInput.value.trim()); }catch(_){}
-  flash('Keys saved. Click Sign in.','good');
-  markStep(1,'done');
+// ─── View routing ──────────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(id).classList.add('active');
+  S.currentView = id.replace('view-','');
 }
 
-function restoreConfig(){
-  try{
-    cidInput.value = localStorage.getItem(SK.cid) || DEFAULT_CLIENT_ID;
-    keyInput.value = localStorage.getItem(SK.key) || '';
-    setTheme(localStorage.getItem(SK.theme) || 'dark', false);
-  }catch(_){}
-  // auto-fill default
-  if(!cidInput.value) cidInput.value = DEFAULT_CLIENT_ID;
+// ─── Home menu render ──────────────────────────────────────────────────────
+function renderHome() {
+  const list = $('home-list');
+  list.innerHTML = HOME_MENU.map((item, i) => `
+    <div class="menu-row ${i === S.selHome ? 'sel' : ''}" data-idx="${i}">
+      <div class="row-left">
+        <div class="row-icon">${item.icon}</div>
+        <span>${item.label}</span>
+      </div>
+      <span class="row-chev">›</span>
+    </div>
+  `).join('');
 }
 
-function getClientId(){ return cidInput.value.trim() || DEFAULT_CLIENT_ID; }
-function getApiKey(){ return keyInput.value.trim() || ''; }
-
-// ─── Step indicator ───────────────────────────────────────────────────────
-function markStep(n, cls){
-  const el = $('step'+n);
-  if(el){ el.className = 'step '+cls; }
-}
-
-// ─── Auth ─────────────────────────────────────────────────────────────────
-function handleOAuthRedirect(){
-  if(!location.hash) return;
-  const params = new URLSearchParams(location.hash.slice(1));
-  const token = params.get('access_token');
-  const error = params.get('error');
-  if(token){
-    state.accessToken = token;
-    setAuth('Connected ✓');
-    flash('Signed in. Click Load playlists.','good');
-    markStep(1,'done'); markStep(2,'done');
-    history.replaceState(null,'', location.pathname);
-  } else if(error){
-    flash('Google error: '+error,'bad');
+// ─── Playlists render ──────────────────────────────────────────────────────
+function renderPlaylists() {
+  const list = $('playlist-list');
+  if (!S.playlists.length) {
+    list.innerHTML = '<div class="menu-row"><div class="row-left"><div class="row-icon">?</div><span style="color:var(--muted)">Go to Settings → Sign in first</span></div></div>';
+    return;
   }
+  list.innerHTML = S.playlists.map((p, i) => `
+    <div class="menu-row ${i === S.selPlaylist ? 'sel' : ''}" data-idx="${i}">
+      <div class="row-left">
+        <div class="row-icon">♫</div>
+        <span>${esc(p.snippet?.title || 'Untitled')}</span>
+      </div>
+      <span class="row-chev">›</span>
+    </div>
+  `).join('');
 }
 
-function manualOAuthSignIn(clientId){
-  // Implicit flow — token comes back in hash
-  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('redirect_uri', location.origin + location.pathname);
-  url.searchParams.set('response_type','token');
-  url.searchParams.set('scope', SCOPE);
-  url.searchParams.set('include_granted_scopes','true');
-  url.searchParams.set('prompt','consent');
-  location.href = url.toString();
+// ─── Tracks render ─────────────────────────────────────────────────────────
+function renderTracks() {
+  const list = $('tracks-list');
+  list.innerHTML = S.videos.map((v, i) => `
+    <div class="playlist-row ${i === S.selTrack ? 'sel' : ''}" data-idx="${i}">
+      <span class="track-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="track-title">${esc(v.snippet?.title || 'Untitled')}</span>
+    </div>
+  `).join('');
 }
 
-function signIn(){
-  const cid = getClientId();
-  if(!cid){ flash('Enter your Client ID first.','bad'); return; }
-  markStep(1,'done');
+// ─── Scroll selected row into view inside fixed-height list ────────────────
+function scrollSelIntoView(listId, selClass) {
+  const list = $(listId);
+  const sel  = list?.querySelector(selClass);
+  if (!sel || !list) return;
+  const lTop = list.scrollTop;
+  const lH   = list.clientHeight;
+  const sTop = sel.offsetTop;
+  const sH   = sel.clientHeight;
+  if (sTop < lTop) list.scrollTop = sTop;
+  else if (sTop + sH > lTop + lH) list.scrollTop = sTop + sH - lH;
+}
 
-  if(window.google?.accounts?.oauth2){
-    state.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: cid,
-      scope: SCOPE,
-      callback(resp){
-        if(resp?.access_token){
-          state.accessToken = resp.access_token;
-          setAuth('Connected ✓');
-          flash('Signed in! Click Load playlists.','good');
-          markStep(2,'done'); markStep(3,'active');
+// ─── Now playing bar sync ──────────────────────────────────────────────────
+function syncNowBar() {
+  const icon  = S.playing ? '▶' : '♪';
+  $('play-icon').textContent  = icon;
+  $('play-icon2').textContent = icon;
+  $('now-title').textContent  = S.currentTitle || 'Nothing playing';
+  $('now-title2').textContent = S.currentTitle || 'Nothing playing';
+  $('now-title3').textContent = S.currentTitle || 'Nothing playing';
+  $('np-title').textContent   = S.currentTitle || '—';
+  $('np-sub').textContent     = S.currentSub   || '—';
+}
+
+// ─── Auth / UI ─────────────────────────────────────────────────────────────
+function setAuth(ok, label) {
+  $('authDot').className  = 'auth-dot' + (ok ? ' on' : '');
+  $('authLabel').textContent = label;
+}
+
+function setMsg(msg, cls) {
+  const el = $('settings-msg');
+  el.textContent = msg;
+  el.className   = 'setting-msg ' + (cls || 'bad');
+}
+
+function doSignIn() {
+  if (window.google?.accounts?.oauth2) {
+    const tc = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID, scope: SCOPE,
+      callback(resp) {
+        if (resp?.access_token) {
+          S.token = resp.access_token;
+          setAuth(true, 'Connected');
+          setMsg('Signed in! Select Load playlists.', 'good');
         } else {
-          flash('No token returned. Check Cloud Console redirect URIs.','bad');
+          setMsg('Sign-in failed.', 'bad');
         }
       }
     });
-    state.tokenClient.requestAccessToken({prompt:'consent'});
+    tc.requestAccessToken({ prompt: 'consent' });
   } else {
-    // GIS library not loaded yet → fall back to redirect flow
-    manualOAuthSignIn(cid);
+    // Redirect fallback
+    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.searchParams.set('client_id', CLIENT_ID);
+    url.searchParams.set('redirect_uri', location.origin + location.pathname);
+    url.searchParams.set('response_type', 'token');
+    url.searchParams.set('scope', SCOPE);
+    url.searchParams.set('prompt', 'consent');
+    location.href = url.toString();
   }
 }
 
-// ─── YouTube API helpers ──────────────────────────────────────────────────
-async function ytFetch(url){
-  if(!state.accessToken) throw new Error('Sign in first.');
-  const res = await fetch(url,{headers:{Authorization:'Bearer '+state.accessToken}});
-  if(!res.ok) throw new Error(await res.text());
+function handleRedirect() {
+  if (!location.hash) return;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const t = p.get('access_token');
+  if (t) {
+    S.token = t;
+    setAuth(true, 'Connected');
+    setMsg('Signed in! Select Load playlists.', 'good');
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
+async function ytFetch(url) {
+  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + S.token } });
+  if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-// ─── Playlist loading ─────────────────────────────────────────────────────
-async function loadPlaylists(){
-  if(!state.accessToken){ flash('Sign in first.','bad'); return; }
-  markStep(3,'active');
-  try{
+async function doLoadPlaylists() {
+  if (!S.token) { setMsg('Sign in first.', 'bad'); return; }
+  setMsg('Loading…', 'bad');
+  try {
     const url = new URL('https://www.googleapis.com/youtube/v3/playlists');
     url.searchParams.set('part','snippet,contentDetails');
     url.searchParams.set('mine','true');
     url.searchParams.set('maxResults','50');
-    const key = getApiKey();
-    if(key) url.searchParams.set('key', key);
     const data = await ytFetch(url.toString());
-    state.playlists = data.items || [];
-    refreshMenu();
-    state.selected = 0;
-    flash(`Loaded ${state.playlists.length} playlist${state.playlists.length===1?'':'s'}.`,'good');
-    markStep(3,'done');
-    renderHome();
-  }catch(err){
-    flash('Load failed: '+String(err.message||err).slice(0,160),'bad');
+    S.playlists = data.items || [];
+    setMsg(`Loaded ${S.playlists.length} playlists.`, 'good');
+    renderPlaylists();
+  } catch(e) {
+    setMsg('Error: ' + String(e.message||e).slice(0,80), 'bad');
   }
 }
 
-async function loadPlaylistVideos(index){
-  const playlist = state.playlists[index];
-  if(!playlist) return;
-  try{
+async function loadPlaylistTracks(idx) {
+  const pl = S.playlists[idx];
+  if (!pl) return;
+  try {
     const url = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
     url.searchParams.set('part','snippet,contentDetails');
-    url.searchParams.set('playlistId', playlist.id);
+    url.searchParams.set('playlistId', pl.id);
     url.searchParams.set('maxResults','50');
-    const key = getApiKey();
-    if(key) url.searchParams.set('key', key);
     const data = await ytFetch(url.toString());
-    state.videos = (data.items||[]).filter(i=>i.contentDetails?.videoId);
-    state.videoSelected = 0;
-    state.activePlaylistTitle = playlist.snippet?.title || 'Playlist';
-    state.view = 'playlist';
-    renderPlaylist();
-    if(state.videos.length) playVideo(state.videos[0].contentDetails.videoId, state.videos[0].snippet?.title);
-  }catch(err){
-    content.innerHTML = `<div class="hero"><h2 class="title">Error</h2><p class="subtitle">${esc(String(err.message||err))}</p></div>`;
+    S.videos    = (data.items || []).filter(i => i.contentDetails?.videoId);
+    S.selTrack  = 0;
+    $('tracks-header').textContent = pl.snippet?.title || 'Tracks';
+    renderTracks();
+    showView('view-tracks');
+    if (S.videos.length) playVideo(S.videos[0]);
+  } catch(e) {
+    setMsg('Track load error: ' + String(e.message||e).slice(0,80), 'bad');
   }
 }
 
-// ─── Video player (persistent — never destroyed by navigation) ────────────
-function onYouTubeIframeAPIReady(){
-  state.playerReady = true;
-}
+// ─── Playback ───────────────────────────────────────────────────────────────
+function onYouTubeIframeAPIReady() { S.playerReady = true; }
 
-function playVideo(videoId, title){
-  if(!videoId) return;
-  playerWrap.classList.add('visible');
-  $('nowTitle').textContent = title || 'Now playing';
-  $('nowSub').textContent   = state.activePlaylistTitle || '';
-  state.currentVideoId = videoId;
+function playVideo(item) {
+  const vid   = item.contentDetails?.videoId;
+  const title = item.snippet?.title || 'Untitled';
+  if (!vid) return;
+  S.currentTitle = title;
+  S.currentSub   = S.playlists[S.selPlaylist]?.snippet?.title || '';
+  S.playing = true;
+  syncNowBar();
 
-  if(state.player?.loadVideoById){
-    state.player.loadVideoById({videoId, suggestedQuality:'small'});
+  if (S.player?.loadVideoById) {
+    S.player.loadVideoById({ videoId: vid, suggestedQuality: 'small' });
     return;
   }
-  if(!window.YT?.Player){
-    flash('YouTube player still loading — retry in a moment.','bad');
-    return;
-  }
-  state.player = new YT.Player('ytPlayer',{
-    height:'100%', width:'100%', videoId,
-    playerVars:{controls:0,playsinline:1,rel:0,modestbranding:1,vq:'small'},
-    events:{
-      onReady(e){
-        state.playerReady=true;
-        e.target.setPlaybackQuality('small'); // 144p — audio only effectively
-        e.target.playVideo();
+  if (!window.YT?.Player) { setTimeout(() => playVideo(item), 800); return; }
+  S.player = new YT.Player('ytPlayer', {
+    height: '1', width: '1', videoId: vid,
+    playerVars: { controls: 0, playsinline: 1, rel: 0, vq: 'small' },
+    events: {
+      onReady(e) { S.playerReady = true; e.target.setPlaybackQuality('small'); e.target.playVideo(); },
+      onStateChange(e) {
+        S.playing = (e.data === YT.PlayerState.PLAYING);
+        syncNowBar();
       }
     }
   });
 }
 
-function togglePlayback(){
-  if(!state.player?.getPlayerState){ openCurrent(); return; }
-  const s = state.player.getPlayerState();
-  s === YT.PlayerState.PLAYING ? state.player.pauseVideo() : state.player.playVideo();
+function togglePlay() {
+  if (!S.player?.getPlayerState) return;
+  const st = S.player.getPlayerState();
+  if (st === YT.PlayerState.PLAYING) { S.player.pauseVideo(); S.playing = false; }
+  else { S.player.playVideo(); S.playing = true; }
+  syncNowBar();
 }
 
-// ─── Menu ─────────────────────────────────────────────────────────────────
-function refreshMenu(){
-  state.menu = [...DEFAULT_MENU];
-  if(state.playlists.length){
-    const items = state.playlists.map(p=>({title:p.snippet?.title||'Untitled',icon:'YT'}));
-    state.menu.splice(1,0,...items);
+// ─── Navigation ─────────────────────────────────────────────────────────────
+function selectRow(delta) {
+  if (S.currentView === 'home') {
+    S.selHome = (S.selHome + delta + HOME_MENU.length) % HOME_MENU.length;
+    renderHome();
+    scrollSelIntoView('home-list', '.menu-row.sel');
+  } else if (S.currentView === 'playlists') {
+    S.selPlaylist = (S.selPlaylist + delta + Math.max(S.playlists.length, 1)) % Math.max(S.playlists.length, 1);
+    renderPlaylists();
+    scrollSelIntoView('playlist-list', '.menu-row.sel');
+  } else if (S.currentView === 'tracks') {
+    S.selTrack = (S.selTrack + delta + Math.max(S.videos.length, 1)) % Math.max(S.videos.length, 1);
+    renderTracks();
+    scrollSelIntoView('tracks-list', '.playlist-row.sel');
   }
 }
 
-// ─── Screen renders ───────────────────────────────────────────────────────
-function renderHome(){
-  state.view = 'home';
-  refreshMenu();
-  content.innerHTML = `
-    <div class="hero">
-      <h2 class="title">ClickWheel Library</h2>
-      <p class="subtitle">Scroll the wheel, open a playlist, play with PLAY or center.</p>
-      <div class="chips"><span class="chip">OAuth</span><span class="chip">iframe player</span><span class="chip">${state.playlists.length} playlists</span></div>
-    </div>
-    <div class="menu">${state.menu.map((item,i)=>`
-      <div class="menu-item ${i===state.selected?'active':''}" onclick="selectMenu(${i})">
-        <div class="left"><div class="badge">${item.icon}</div><div class="label">${esc(item.title)}</div></div>
-        <div class="chev">&gt;</div>
-      </div>`).join('')}
-    </div>`;
-}
-
-function renderPlaylist(){
-  state.view = 'playlist';
-  content.innerHTML = `
-    <div class="hero">
-      <h2 class="title">${esc(state.activePlaylistTitle)}</h2>
-      <p class="subtitle">${state.videos.length} tracks · tap a row to play</p>
-    </div>
-    <div class="menu">${state.videos.map((v,i)=>`
-      <div class="menu-item ${i===state.videoSelected?'active':''}" onclick="selectVideo(${i})">
-        <div class="left"><div class="badge">${String(i+1).padStart(2,'0')}</div><div class="label">${esc(v.snippet?.title||'Untitled')}</div></div>
-        <div class="chev">▶</div>
-      </div>`).join('')}
-    </div>`;
-}
-
-function renderThemes(){
-  state.view='themes';
-  content.innerHTML=`
-    <div class="hero"><h2 class="title">Themes</h2></div>
-    <div class="menu">
-      ${[['D','dark','Dark'],['L','light','Light'],['S','sunset','Sunset'],['M','mint','Mint']].map(([b,t,n])=>`
-        <div class="menu-item" onclick="setTheme('${t}')"><div class="left"><div class="badge">${b}</div><div class="label">${n}</div></div><div class="chev">&gt;</div></div>`).join('')}
-    </div>`;
-}
-
-function renderStub(name){
-  state.view='stub';
-  content.innerHTML=`<div class="hero"><h2 class="title">${esc(name)}</h2><p class="subtitle">Coming soon.</p></div>`;
-}
-
-function renderCurrentView(){
-  if(state.view==='playlist'){ renderPlaylist(); return; }
-  if(state.view==='themes'){ renderThemes(); return; }
-  if(state.view==='stub'){ renderStub(state.menu[state.selected]?.title||'App'); return; }
-  renderHome();
-}
-
-// ─── Navigation ───────────────────────────────────────────────────────────
-function selectMenu(i){
-  state.selected=i;
-  renderCurrentView();
-}
-
-function selectVideo(i){
-  state.videoSelected=i;
-  const v=state.videos[i];
-  if(v) playVideo(v.contentDetails.videoId, v.snippet?.title);
-  renderPlaylist();
-}
-
-function move(delta){
-  if(state.view==='home'){
-    state.selected=(state.selected+delta+state.menu.length)%state.menu.length;
-    renderHome(); return;
-  }
-  if(state.view==='playlist'){
-    state.videoSelected=(state.videoSelected+delta+state.videos.length)%state.videos.length;
-    renderPlaylist(); return;
+function pressCenter() {
+  if (S.currentView === 'home') {
+    const item = HOME_MENU[S.selHome];
+    if (item.id === 'playlists')   { renderPlaylists(); showView('view-playlists'); }
+    else if (item.id === 'settings') showView('view-settings');
+    else if (item.id === 'nowplaying') showView('view-nowplaying');
+  } else if (S.currentView === 'playlists') {
+    if (S.playlists.length) loadPlaylistTracks(S.selPlaylist);
+  } else if (S.currentView === 'tracks') {
+    const v = S.videos[S.selTrack];
+    if (v) { playVideo(v); showView('view-nowplaying'); }
   }
 }
 
-function goHome(){ state.selected=0; renderHome(); }
-
-function openCurrent(){
-  if(state.view==='home'){
-    const i=state.selected;
-    const afterFixed = i - 1; // 0 = YouTube Music slot
-    if(i===0){ renderStub('YouTube Music'); return; }
-    if(afterFixed>=0 && afterFixed<state.playlists.length){
-      loadPlaylistVideos(afterFixed); return;
-    }
-    const item=state.menu[i];
-    if(item?.title==='Themes'){ renderThemes(); return; }
-    renderStub(item?.title||'App'); return;
-  }
-  if(state.view==='playlist'){
-    const v=state.videos[state.videoSelected];
-    if(v) playVideo(v.contentDetails.videoId, v.snippet?.title);
-  }
+function pressMenu() {
+  if (S.currentView === 'home') return;
+  if (['playlists','settings','nowplaying'].includes(S.currentView)) { renderHome(); showView('view-home'); }
+  else if (S.currentView === 'tracks') { renderPlaylists(); showView('view-playlists'); }
 }
 
-// ─── Misc ─────────────────────────────────────────────────────────────────
-function setAuth(t){ authState.textContent=t; }
-function flash(msg,cls){ setupMessage.textContent=msg; setupMessage.className='message '+(cls==='good'?'good':'bad'); }
-function setTheme(name,persist=true){ themeRoot.className='layout theme-'+name; if(persist)try{localStorage.setItem(SK.theme,name);}catch(_){} }
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pressPlay() { togglePlay(); }
+function pressPrev() { selectRow(-1); }
+function pressNext() { selectRow(1); }
 
-// ─── Keyboard ─────────────────────────────────────────────────────────────
-document.addEventListener('keydown',e=>{
-  if(e.key==='ArrowDown'||e.key==='ArrowRight') move(1);
-  else if(e.key==='ArrowUp'||e.key==='ArrowLeft') move(-1);
-  else if(e.key==='Enter') openCurrent();
-  else if(e.key==='Backspace'||e.key==='Escape') goHome();
-  else if(e.key===' '){ e.preventDefault(); togglePlayback(); }
+// ─── Keyboard support ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  selectRow(-1);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') selectRow(1);
+  if (e.key === 'Enter') pressCenter();
+  if (e.key === 'Backspace' || e.key === 'Escape') pressMenu();
+  if (e.key === ' ') { e.preventDefault(); pressPlay(); }
 });
 
-// ─── Global exports for onclick= ──────────────────────────────────────────
-Object.assign(window,{goHome,loadPlaylists,move,openCurrent,saveConfig,selectMenu,selectVideo,setTheme,signIn,togglePlayback});
+// ─── Click Wheel — rotary gesture + tap zones ───────────────────────────────
+(function() {
+  const ring   = $('wheelRing');
+  const center = $('wheelCenter');
+  const wrap   = $('wheelWrap');
 
-// ─── Init ─────────────────────────────────────────────────────────────────
-restoreConfig();
-markStep(1, cidInput.value ? 'done' : 'active');
-markStep(2, 'active');
-markStep(3, 'active');
+  // Tap zones on ring (top/left/right/bottom)
+  ring.addEventListener('click', e => {
+    const rect = ring.getBoundingClientRect();
+    const cx   = rect.left + rect.width / 2;
+    const cy   = rect.top  + rect.height / 2;
+    const dx   = e.clientX - cx;
+    const dy   = e.clientY - cy;
+    // Only count if not hitting center
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const r    = rect.width / 2;
+    if (dist < r * 0.38) return; // center zone handled separately
+
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI; // -180 to 180
+    if (angle > -135 && angle < -45)  pressMenu();       // top
+    else if (angle >= -45 && angle < 45)  pressNext();   // right
+    else if (angle >= 45 && angle < 135)  pressPlay();   // bottom
+    else pressMenu(); // left — also menu / back
+  });
+
+  center.addEventListener('click', e => { e.stopPropagation(); pressCenter(); });
+
+  // ── Rotary drag ────────────────────────────────────────────────────────
+  let lastAngle = null;
+  let accum     = 0;
+  const STEP    = 30; // degrees per scroll tick
+
+  function getAngle(e, rect) {
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+    const dx = (e.touches ? e.touches[0].clientX : e.clientX) - cx;
+    const dy = (e.touches ? e.touches[0].clientY : e.clientY) - cy;
+    return Math.atan2(dy, dx) * 180 / Math.PI;
+  }
+
+  function isOnRing(e, rect) {
+    const cx   = rect.left + rect.width  / 2;
+    const cy   = rect.top  + rect.height / 2;
+    const px   = (e.touches ? e.touches[0].clientX : e.clientX);
+    const py   = (e.touches ? e.touches[0].clientY : e.clientY);
+    const dist = Math.sqrt((px-cx)**2 + (py-cy)**2);
+    const r    = rect.width / 2;
+    return dist > r * 0.38 && dist < r * 0.96;
+  }
+
+  function onStart(e) {
+    const rect = wrap.getBoundingClientRect();
+    if (!isOnRing(e, rect)) return;
+    lastAngle = getAngle(e, rect);
+    accum = 0;
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (lastAngle === null) return;
+    const rect  = wrap.getBoundingClientRect();
+    const angle = getAngle(e, rect);
+    let delta   = angle - lastAngle;
+    // Wrap around ±180
+    if (delta > 180)  delta -= 360;
+    if (delta < -180) delta += 360;
+    accum += delta;
+    lastAngle = angle;
+    while (accum >= STEP)  { selectRow(1);  accum -= STEP; }
+    while (accum <= -STEP) { selectRow(-1); accum += STEP; }
+    e.preventDefault();
+  }
+
+  function onEnd() { lastAngle = null; accum = 0; }
+
+  // Touch
+  wrap.addEventListener('touchstart', onStart, { passive: false });
+  wrap.addEventListener('touchmove',  onMove,  { passive: false });
+  wrap.addEventListener('touchend',   onEnd);
+  // Mouse (desktop)
+  wrap.addEventListener('mousedown',  onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup',   onEnd);
+
+  // Swipe up/down on wheel as alternative
+  let swipeStartY = null;
+  const SWIPE_STEP = 18;
+  wrap.addEventListener('touchstart', e => {
+    swipeStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+})();
+
+// ─── Prevent page scroll on touch ──────────────────────────────────────────
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ─── Util ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+handleRedirect();
 renderHome();
-handleOAuthRedirect(); // picks up token if returning from Google redirect
+showView('view-home');
+$('cid-display').textContent = CLIENT_ID.slice(0, 28) + '…';
 </script>
 </body>
 </html>
