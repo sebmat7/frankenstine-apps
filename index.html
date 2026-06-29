@@ -334,8 +334,11 @@ html, body {
             <button class="setting-btn" onclick="doLoadPlaylists()">Load playlists</button>
           </div>
           <div class="setting-msg bad" id="settings-msg">Not connected.</div>
+          <div class="setting-actions">
+            <button class="setting-btn" onclick="pressMenu()">⬅ Back to Home</button>
+          </div>
           <div class="setting-hint">
-            After signing in, press MENU and go to Playlists.
+            After signing in, press MENU on the wheel or tap Back to go to Playlists.
           </div>
         </div>
       </div>
@@ -652,26 +655,28 @@ document.addEventListener('keydown', e => {
   const center = $('wheelCenter');
   const wrap   = $('wheelWrap');
 
-  // Tap zones on ring (top/left/right/bottom)
-  ring.addEventListener('click', e => {
+  // Tap zones on ring — shared handler used by both click and touchend
+  function fireTapZone(clientX, clientY) {
     const rect = ring.getBoundingClientRect();
-    const cx   = rect.left + rect.width / 2;
+    const cx   = rect.left + rect.width  / 2;
     const cy   = rect.top  + rect.height / 2;
-    const dx   = e.clientX - cx;
-    const dy   = e.clientY - cy;
-    // Only count if not hitting center
+    const dx   = clientX - cx;
+    const dy   = clientY - cy;
     const dist = Math.sqrt(dx*dx + dy*dy);
     const r    = rect.width / 2;
-    if (dist < r * 0.38) return; // center zone handled separately
+    if (dist < r * 0.38 || dist > r * 0.97) return; // center or outside ring
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    if (angle > -135 && angle < -45)      pressMenu(); // top
+    else if (angle >= -45 && angle < 45)  pressNext(); // right
+    else if (angle >= 45 && angle < 135)  pressPlay(); // bottom
+    else                                  pressMenu(); // left
+  }
 
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI; // -180 to 180
-    if (angle > -135 && angle < -45)  pressMenu();       // top
-    else if (angle >= -45 && angle < 45)  pressNext();   // right
-    else if (angle >= 45 && angle < 135)  pressPlay();   // bottom
-    else pressMenu(); // left — also menu / back
-  });
+  // Mouse click (desktop)
+  ring.addEventListener('click', e => fireTapZone(e.clientX, e.clientY));
 
   center.addEventListener('click', e => { e.stopPropagation(); pressCenter(); });
+  center.addEventListener('touchend', e => { e.stopPropagation(); e.preventDefault(); pressCenter(); }, { passive: false });
 
   // ── Rotary drag ────────────────────────────────────────────────────────
   let lastAngle = null;
@@ -696,11 +701,16 @@ document.addEventListener('keydown', e => {
     return dist > r * 0.38 && dist < r * 0.96;
   }
 
+  let startX = null, startY = null, didDrag = false;
+
   function onStart(e) {
     const rect = wrap.getBoundingClientRect();
     if (!isOnRing(e, rect)) return;
     lastAngle = getAngle(e, rect);
     accum = 0;
+    didDrag = false;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    startY = e.touches ? e.touches[0].clientY : e.clientY;
     e.preventDefault();
   }
 
@@ -714,12 +724,23 @@ document.addEventListener('keydown', e => {
     if (delta < -180) delta += 360;
     accum += delta;
     lastAngle = angle;
+    if (Math.abs(accum) > 8) didDrag = true;
     while (accum >= STEP)  { selectRow(1);  accum -= STEP; }
     while (accum <= -STEP) { selectRow(-1); accum += STEP; }
     e.preventDefault();
   }
 
-  function onEnd() { lastAngle = null; accum = 0; }
+  function onEnd(e) {
+    // If finger barely moved, treat as a tap on the ring zone
+    if (!didDrag && startX !== null) {
+      const ex = e.changedTouches ? e.changedTouches[0].clientX : startX;
+      const ey = e.changedTouches ? e.changedTouches[0].clientY : startY;
+      const dx = ex - startX, dy = ey - startY;
+      const moved = Math.sqrt(dx*dx + dy*dy);
+      if (moved < 12) fireTapZone(ex, ey);
+    }
+    lastAngle = null; accum = 0; startX = null; startY = null; didDrag = false;
+  }
 
   // Touch
   wrap.addEventListener('touchstart', onStart, { passive: false });
