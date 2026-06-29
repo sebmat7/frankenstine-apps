@@ -6,3 +6,568 @@
 <title>iPod Music App - Version 4</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://www.youtube.com/iframe_api"></script>
+<style>
+  :root{
+    --bg-a:#0a0d14;
+    --bg-b:#141a2a;
+    --screen:#080b12;
+    --screen-2:#0f1521;
+    --text:#f3f6fb;
+    --muted:#9ba6bb;
+    --line:rgba(255,255,255,.09);
+    --accent:#64d2ff;
+    --accent-2:#9b7bff;
+    --good:#78f2b3;
+    --bad:#ff8d8d;
+    --wheel:#f3efe8;
+    --wheel-text:#2a2f36;
+    --card:#1a2234;
+    --card-active:#2d6cff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(100,210,255,.22), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(155,123,255,.22), transparent 28%),
+      linear-gradient(160deg,var(--bg-a),var(--bg-b) 60%,#05070c);
+  }
+  .layout{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns:minmax(330px,420px) minmax(300px,440px);
+    gap:24px;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  /* ── Device ── */
+  .device{width:min(100%,390px);margin:0 auto;filter:drop-shadow(0 24px 60px rgba(0,0,0,.5))}
+  .shell{
+    position:relative;border-radius:44px;padding:14px;
+    background:linear-gradient(145deg,#f2e7d2,#b9aa8b 72%,#937f61);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.32);
+  }
+  .bezel{position:absolute;inset:12px;border-radius:36px;border:1px solid rgba(0,0,0,.18);pointer-events:none}
+  .screen{
+    position:relative;height:356px;border-radius:24px;overflow:hidden;
+    background:linear-gradient(180deg,var(--screen),var(--screen-2));
+    border:7px solid #171b22;box-shadow:inset 0 0 30px rgba(0,0,0,.6);
+  }
+  .status{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:10px 12px;font-size:12px;color:var(--muted);
+    border-bottom:1px solid var(--line);letter-spacing:.02em;
+  }
+  .status strong{color:var(--text);font-weight:700}
+  .content{height:calc(100% - 42px);overflow-y:auto;overflow-x:hidden;padding:14px}
+  /* ── Screen content ── */
+  .hero{display:grid;gap:10px;margin-bottom:14px}
+  .title{margin:0;font-size:26px;line-height:1.04;letter-spacing:-.03em}
+  .subtitle{margin:0;color:var(--muted);line-height:1.45;font-size:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--muted);font-size:12px}
+  .menu{display:grid;gap:8px}
+  .menu-item{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:11px 12px;border-radius:14px;background:var(--card);
+    border:1px solid rgba(255,255,255,.06);cursor:pointer;
+    transition:transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .menu-item:hover{transform:translateY(-1px)}
+  .menu-item.active{background:linear-gradient(90deg,var(--card-active),#1743a4);border-color:rgba(255,255,255,.14);color:#fff}
+  .menu-item .left{display:flex;align-items:center;gap:10px;min-width:0}
+  .badge{min-width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:700;flex:0 0 auto}
+  .menu-item.active .badge{background:rgba(255,255,255,.18)}
+  .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px;font-weight:650}
+  .chev{color:currentColor;opacity:.8}
+  /* ── Persistent player area ── */
+  .player-wrap{display:none;flex-direction:column;gap:10px;padding:14px;border-top:1px solid var(--line)}
+  .player-wrap.visible{display:flex}
+  .cover-row{display:flex;gap:12px;align-items:center}
+  .art{width:64px;height:64px;border-radius:14px;background:linear-gradient(145deg,#64d2ff,#9b7bff);box-shadow:0 10px 18px rgba(0,0,0,.28);flex:0 0 auto}
+  .track-info h3{margin:0 0 2px;font-size:14px;line-height:1.25}
+  .track-info p{margin:0;font-size:12px;color:var(--muted)}
+  /* hidden video — audio only mode: tiny iframe keeps playback alive */
+  #ytPlayer{width:1px;height:1px;position:absolute;opacity:0;pointer-events:none}
+  /* ── Click Wheel ── */
+  .wheel-wrap{display:grid;place-items:center;margin-top:16px}
+  .wheel{position:relative;width:234px;height:234px;border-radius:50%;background:var(--wheel);box-shadow:inset 0 0 14px rgba(0,0,0,.2),0 12px 30px rgba(0,0,0,.22);user-select:none}
+  .wheel button{position:absolute;border:0;background:transparent;color:var(--wheel-text);font-weight:900;cursor:pointer}
+  .wheel .menu-btn{top:20px;left:50%;transform:translateX(-50%);font-size:15px}
+  .wheel .prev{left:20px;top:50%;transform:translateY(-50%);font-size:28px}
+  .wheel .next{right:20px;top:50%;transform:translateY(-50%);font-size:28px}
+  .wheel .play{bottom:20px;left:50%;transform:translateX(-50%);font-size:16px}
+  .wheel .center{width:86px;height:86px;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,#e2e2e2,#b5b5b5)!important;box-shadow:inset 0 0 10px rgba(0,0,0,.18)}
+  /* ── Side panel ── */
+  .panel{
+    width:min(100%,440px);margin:0 auto;padding:22px;border-radius:26px;
+    background:rgba(15,18,27,.68);border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(16px);box-shadow:0 20px 50px rgba(0,0,0,.28);
+  }
+  .panel h1{margin:0 0 8px;font-size:26px;letter-spacing:-.03em}
+  .panel p{margin:0 0 14px;color:#d7ddeb;line-height:1.5;font-size:14px}
+  .field{margin-bottom:10px}
+  .field label{display:block;margin:0 0 6px;font-size:12px;color:#c9d3e2;text-transform:uppercase;letter-spacing:.08em}
+  input{width:100%;padding:12px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(4,6,12,.85);color:#fff;outline:none;font:inherit}
+  input:focus{border-color:rgba(100,210,255,.7);box-shadow:0 0 0 3px rgba(100,210,255,.12)}
+  .actions,.themes{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  button{appearance:none;border:0;border-radius:999px;padding:11px 14px;background:#fff;color:#111827;font-weight:750;cursor:pointer;font:inherit}
+  button.secondary{background:rgba(255,255,255,.08);color:#f2f5fb;border:1px solid rgba(255,255,255,.12)}
+  button:hover{transform:translateY(-1px)}
+  .section{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .message{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);font-size:13px;line-height:1.45}
+  .message.good{color:var(--good)}
+  .message.bad{color:var(--bad)}
+  .help{margin-top:12px;color:#aeb8ca;font-size:12px;line-height:1.6}
+  /* ── Step indicator ── */
+  .steps{display:grid;gap:6px;margin-bottom:14px}
+  .step{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:13px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04)}
+  .step-num{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:rgba(255,255,255,.12);flex:0 0 auto}
+  .step.done .step-num{background:var(--good);color:#000}
+  .step.active .step-num{background:var(--accent);color:#000}
+  /* ── Themes ── */
+  .theme-light{--bg-a:#dce8f7;--bg-b:#f7fafc;--screen:#ffffff;--screen-2:#eef4fb;--text:#0f172a;--muted:#526176;--card:#eff4fb;--card-active:#0f5bd8;--line:rgba(15,23,42,.1)}
+  .theme-sunset{--bg-a:#2a1132;--bg-b:#120d24;--accent:#ff8f5b;--accent-2:#ff5eb6}
+  .theme-mint{--bg-a:#041418;--bg-b:#071f1d;--accent:#67e8a8;--accent-2:#4cc9f0}
+  /* ── Responsive ── */
+  @media(max-width:920px){.layout{grid-template-columns:1fr;justify-items:center}.panel{order:2}}
+</style>
+</head>
+<body>
+<div class="layout" id="themeRoot">
+
+  <!-- ── Device ── -->
+  <section class="device">
+    <div class="shell">
+      <div class="bezel"></div>
+      <div class="screen">
+        <div class="status">
+          <span><strong>ClickWheel</strong></span>
+          <span id="authState">Not connected</span>
+        </div>
+        <div class="content" id="content"></div>
+      </div>
+    </div>
+
+    <!-- persistent player sits OUTSIDE .screen so navigating never destroys it -->
+    <div class="player-wrap" id="playerWrap">
+      <div class="cover-row">
+        <div class="art"></div>
+        <div class="track-info">
+          <h3 id="nowTitle">Nothing playing</h3>
+          <p id="nowSub">Select a track from a playlist</p>
+        </div>
+      </div>
+      <div id="ytPlayer"></div>
+    </div>
+
+    <div class="wheel-wrap">
+      <div class="wheel">
+        <button class="menu-btn" type="button" onclick="goHome()">MENU</button>
+        <button class="prev"     type="button" onclick="move(-1)">&#x2039;</button>
+        <button class="next"     type="button" onclick="move(1)">&#x203A;</button>
+        <button class="play"     type="button" onclick="togglePlayback()">PLAY</button>
+        <button class="center"   type="button" onclick="openCurrent()"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Side panel ── -->
+  <aside class="panel">
+    <h1>iPod Music App v4</h1>
+    <p>Sign in with Google to load your YouTube playlists — then browse and play with the click wheel.</p>
+
+    <!-- Step tracker -->
+    <div class="steps">
+      <div class="step" id="step1"><div class="step-num">1</div> Save your OAuth Client ID</div>
+      <div class="step" id="step2"><div class="step-num">2</div> Sign in with Google</div>
+      <div class="step" id="step3"><div class="step-num">3</div> Load playlists</div>
+    </div>
+
+    <div class="field">
+      <label for="clientId">Google OAuth Client ID</label>
+      <input id="clientId" autocomplete="off" placeholder="626644774647-….apps.googleusercontent.com" />
+    </div>
+    <div class="field">
+      <label for="apiKey">YouTube Data API Key <span style="opacity:.6">(optional)</span></label>
+      <input id="apiKey" autocomplete="off" placeholder="AIza..." />
+    </div>
+
+    <div class="actions">
+      <button type="button" onclick="saveConfig()">Save keys</button>
+      <button type="button" class="secondary" onclick="signIn()">Sign in with Google</button>
+      <button type="button" class="secondary" onclick="loadPlaylists()">Load playlists</button>
+    </div>
+
+    <div id="setupMessage" class="message bad">Not connected yet.</div>
+
+    <!-- Setup help -->
+    <div class="help section">
+      <strong>One-time Google Cloud setup (if sign-in fails):</strong><br>
+      1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent)">console.cloud.google.com/apis/credentials</a><br>
+      2. Open your OAuth 2.0 Client ID<br>
+      3. Under <em>Authorized JavaScript origins</em> add: <code>http://localhost:8123</code><br>
+      4. Under <em>Authorized redirect URIs</em> add: <code>http://localhost:8123/</code> and <code>http://localhost:8123/ipod%20app%20Version%204.html</code><br>
+      5. Save → then click Sign in above.
+    </div>
+
+    <!-- Themes -->
+    <div class="themes section">
+      <button type="button" class="secondary" onclick="setTheme('dark')">Dark</button>
+      <button type="button" class="secondary" onclick="setTheme('light')">Light</button>
+      <button type="button" class="secondary" onclick="setTheme('sunset')">Sunset</button>
+      <button type="button" class="secondary" onclick="setTheme('mint')">Mint</button>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────
+const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+const DEFAULT_CLIENT_ID = '626644774647-q2rpcto9th4ec2f784v9htc2pm6e8shc.apps.googleusercontent.com';
+const SK = { cid:'ipod_v4_cid', key:'ipod_v4_key', theme:'ipod_v4_theme' };
+
+const DEFAULT_MENU = [
+  { title:'YouTube Music', icon:'YT' },
+  { title:'Playlists',     icon:'PL' },
+  { title:'Search',        icon:'SR' },
+  { title:'Themes',        icon:'TH' },
+  { title:'Settings',      icon:'ST' },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────
+const state = {
+  view:'home', menu:[...DEFAULT_MENU], selected:0,
+  playlists:[], videos:[], videoSelected:0,
+  activePlaylistTitle:'',
+  accessToken:'',
+  tokenClient:null,
+  player:null, playerReady:false,
+  currentVideoId:''
+};
+
+// ─── DOM refs ─────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const content      = $('content');
+const authState    = $('authState');
+const setupMessage = $('setupMessage');
+const cidInput     = $('clientId');
+const keyInput     = $('apiKey');
+const themeRoot    = $('themeRoot');
+const playerWrap   = $('playerWrap');
+
+// ─── Config helpers ───────────────────────────────────────────────────────
+function saveConfig(){
+  try{ localStorage.setItem(SK.cid, cidInput.value.trim()); }catch(_){}
+  try{ localStorage.setItem(SK.key, keyInput.value.trim()); }catch(_){}
+  flash('Keys saved. Click Sign in.','good');
+  markStep(1,'done');
+}
+
+function restoreConfig(){
+  try{
+    cidInput.value = localStorage.getItem(SK.cid) || DEFAULT_CLIENT_ID;
+    keyInput.value = localStorage.getItem(SK.key) || '';
+    setTheme(localStorage.getItem(SK.theme) || 'dark', false);
+  }catch(_){}
+  // auto-fill default
+  if(!cidInput.value) cidInput.value = DEFAULT_CLIENT_ID;
+}
+
+function getClientId(){ return cidInput.value.trim() || DEFAULT_CLIENT_ID; }
+function getApiKey(){ return keyInput.value.trim() || ''; }
+
+// ─── Step indicator ───────────────────────────────────────────────────────
+function markStep(n, cls){
+  const el = $('step'+n);
+  if(el){ el.className = 'step '+cls; }
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────
+function handleOAuthRedirect(){
+  if(!location.hash) return;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const token = params.get('access_token');
+  const error = params.get('error');
+  if(token){
+    state.accessToken = token;
+    setAuth('Connected ✓');
+    flash('Signed in. Click Load playlists.','good');
+    markStep(1,'done'); markStep(2,'done');
+    history.replaceState(null,'', location.pathname);
+  } else if(error){
+    flash('Google error: '+error,'bad');
+  }
+}
+
+function manualOAuthSignIn(clientId){
+  // Implicit flow — token comes back in hash
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', location.origin + location.pathname);
+  url.searchParams.set('response_type','token');
+  url.searchParams.set('scope', SCOPE);
+  url.searchParams.set('include_granted_scopes','true');
+  url.searchParams.set('prompt','consent');
+  location.href = url.toString();
+}
+
+function signIn(){
+  const cid = getClientId();
+  if(!cid){ flash('Enter your Client ID first.','bad'); return; }
+  markStep(1,'done');
+
+  if(window.google?.accounts?.oauth2){
+    state.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cid,
+      scope: SCOPE,
+      callback(resp){
+        if(resp?.access_token){
+          state.accessToken = resp.access_token;
+          setAuth('Connected ✓');
+          flash('Signed in! Click Load playlists.','good');
+          markStep(2,'done'); markStep(3,'active');
+        } else {
+          flash('No token returned. Check Cloud Console redirect URIs.','bad');
+        }
+      }
+    });
+    state.tokenClient.requestAccessToken({prompt:'consent'});
+  } else {
+    // GIS library not loaded yet → fall back to redirect flow
+    manualOAuthSignIn(cid);
+  }
+}
+
+// ─── YouTube API helpers ──────────────────────────────────────────────────
+async function ytFetch(url){
+  if(!state.accessToken) throw new Error('Sign in first.');
+  const res = await fetch(url,{headers:{Authorization:'Bearer '+state.accessToken}});
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ─── Playlist loading ─────────────────────────────────────────────────────
+async function loadPlaylists(){
+  if(!state.accessToken){ flash('Sign in first.','bad'); return; }
+  markStep(3,'active');
+  try{
+    const url = new URL('https://www.googleapis.com/youtube/v3/playlists');
+    url.searchParams.set('part','snippet,contentDetails');
+    url.searchParams.set('mine','true');
+    url.searchParams.set('maxResults','50');
+    const key = getApiKey();
+    if(key) url.searchParams.set('key', key);
+    const data = await ytFetch(url.toString());
+    state.playlists = data.items || [];
+    refreshMenu();
+    state.selected = 0;
+    flash(`Loaded ${state.playlists.length} playlist${state.playlists.length===1?'':'s'}.`,'good');
+    markStep(3,'done');
+    renderHome();
+  }catch(err){
+    flash('Load failed: '+String(err.message||err).slice(0,160),'bad');
+  }
+}
+
+async function loadPlaylistVideos(index){
+  const playlist = state.playlists[index];
+  if(!playlist) return;
+  try{
+    const url = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
+    url.searchParams.set('part','snippet,contentDetails');
+    url.searchParams.set('playlistId', playlist.id);
+    url.searchParams.set('maxResults','50');
+    const key = getApiKey();
+    if(key) url.searchParams.set('key', key);
+    const data = await ytFetch(url.toString());
+    state.videos = (data.items||[]).filter(i=>i.contentDetails?.videoId);
+    state.videoSelected = 0;
+    state.activePlaylistTitle = playlist.snippet?.title || 'Playlist';
+    state.view = 'playlist';
+    renderPlaylist();
+    if(state.videos.length) playVideo(state.videos[0].contentDetails.videoId, state.videos[0].snippet?.title);
+  }catch(err){
+    content.innerHTML = `<div class="hero"><h2 class="title">Error</h2><p class="subtitle">${esc(String(err.message||err))}</p></div>`;
+  }
+}
+
+// ─── Video player (persistent — never destroyed by navigation) ────────────
+function onYouTubeIframeAPIReady(){
+  state.playerReady = true;
+}
+
+function playVideo(videoId, title){
+  if(!videoId) return;
+  playerWrap.classList.add('visible');
+  $('nowTitle').textContent = title || 'Now playing';
+  $('nowSub').textContent   = state.activePlaylistTitle || '';
+  state.currentVideoId = videoId;
+
+  if(state.player?.loadVideoById){
+    state.player.loadVideoById({videoId, suggestedQuality:'small'});
+    return;
+  }
+  if(!window.YT?.Player){
+    flash('YouTube player still loading — retry in a moment.','bad');
+    return;
+  }
+  state.player = new YT.Player('ytPlayer',{
+    height:'100%', width:'100%', videoId,
+    playerVars:{controls:0,playsinline:1,rel:0,modestbranding:1,vq:'small'},
+    events:{
+      onReady(e){
+        state.playerReady=true;
+        e.target.setPlaybackQuality('small'); // 144p — audio only effectively
+        e.target.playVideo();
+      }
+    }
+  });
+}
+
+function togglePlayback(){
+  if(!state.player?.getPlayerState){ openCurrent(); return; }
+  const s = state.player.getPlayerState();
+  s === YT.PlayerState.PLAYING ? state.player.pauseVideo() : state.player.playVideo();
+}
+
+// ─── Menu ─────────────────────────────────────────────────────────────────
+function refreshMenu(){
+  state.menu = [...DEFAULT_MENU];
+  if(state.playlists.length){
+    const items = state.playlists.map(p=>({title:p.snippet?.title||'Untitled',icon:'YT'}));
+    state.menu.splice(1,0,...items);
+  }
+}
+
+// ─── Screen renders ───────────────────────────────────────────────────────
+function renderHome(){
+  state.view = 'home';
+  refreshMenu();
+  content.innerHTML = `
+    <div class="hero">
+      <h2 class="title">ClickWheel Library</h2>
+      <p class="subtitle">Scroll the wheel, open a playlist, play with PLAY or center.</p>
+      <div class="chips"><span class="chip">OAuth</span><span class="chip">iframe player</span><span class="chip">${state.playlists.length} playlists</span></div>
+    </div>
+    <div class="menu">${state.menu.map((item,i)=>`
+      <div class="menu-item ${i===state.selected?'active':''}" onclick="selectMenu(${i})">
+        <div class="left"><div class="badge">${item.icon}</div><div class="label">${esc(item.title)}</div></div>
+        <div class="chev">&gt;</div>
+      </div>`).join('')}
+    </div>`;
+}
+
+function renderPlaylist(){
+  state.view = 'playlist';
+  content.innerHTML = `
+    <div class="hero">
+      <h2 class="title">${esc(state.activePlaylistTitle)}</h2>
+      <p class="subtitle">${state.videos.length} tracks · tap a row to play</p>
+    </div>
+    <div class="menu">${state.videos.map((v,i)=>`
+      <div class="menu-item ${i===state.videoSelected?'active':''}" onclick="selectVideo(${i})">
+        <div class="left"><div class="badge">${String(i+1).padStart(2,'0')}</div><div class="label">${esc(v.snippet?.title||'Untitled')}</div></div>
+        <div class="chev">▶</div>
+      </div>`).join('')}
+    </div>`;
+}
+
+function renderThemes(){
+  state.view='themes';
+  content.innerHTML=`
+    <div class="hero"><h2 class="title">Themes</h2></div>
+    <div class="menu">
+      ${[['D','dark','Dark'],['L','light','Light'],['S','sunset','Sunset'],['M','mint','Mint']].map(([b,t,n])=>`
+        <div class="menu-item" onclick="setTheme('${t}')"><div class="left"><div class="badge">${b}</div><div class="label">${n}</div></div><div class="chev">&gt;</div></div>`).join('')}
+    </div>`;
+}
+
+function renderStub(name){
+  state.view='stub';
+  content.innerHTML=`<div class="hero"><h2 class="title">${esc(name)}</h2><p class="subtitle">Coming soon.</p></div>`;
+}
+
+function renderCurrentView(){
+  if(state.view==='playlist'){ renderPlaylist(); return; }
+  if(state.view==='themes'){ renderThemes(); return; }
+  if(state.view==='stub'){ renderStub(state.menu[state.selected]?.title||'App'); return; }
+  renderHome();
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────
+function selectMenu(i){
+  state.selected=i;
+  renderCurrentView();
+}
+
+function selectVideo(i){
+  state.videoSelected=i;
+  const v=state.videos[i];
+  if(v) playVideo(v.contentDetails.videoId, v.snippet?.title);
+  renderPlaylist();
+}
+
+function move(delta){
+  if(state.view==='home'){
+    state.selected=(state.selected+delta+state.menu.length)%state.menu.length;
+    renderHome(); return;
+  }
+  if(state.view==='playlist'){
+    state.videoSelected=(state.videoSelected+delta+state.videos.length)%state.videos.length;
+    renderPlaylist(); return;
+  }
+}
+
+function goHome(){ state.selected=0; renderHome(); }
+
+function openCurrent(){
+  if(state.view==='home'){
+    const i=state.selected;
+    const afterFixed = i - 1; // 0 = YouTube Music slot
+    if(i===0){ renderStub('YouTube Music'); return; }
+    if(afterFixed>=0 && afterFixed<state.playlists.length){
+      loadPlaylistVideos(afterFixed); return;
+    }
+    const item=state.menu[i];
+    if(item?.title==='Themes'){ renderThemes(); return; }
+    renderStub(item?.title||'App'); return;
+  }
+  if(state.view==='playlist'){
+    const v=state.videos[state.videoSelected];
+    if(v) playVideo(v.contentDetails.videoId, v.snippet?.title);
+  }
+}
+
+// ─── Misc ─────────────────────────────────────────────────────────────────
+function setAuth(t){ authState.textContent=t; }
+function flash(msg,cls){ setupMessage.textContent=msg; setupMessage.className='message '+(cls==='good'?'good':'bad'); }
+function setTheme(name,persist=true){ themeRoot.className='layout theme-'+name; if(persist)try{localStorage.setItem(SK.theme,name);}catch(_){} }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ─── Keyboard ─────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'||e.key==='ArrowRight') move(1);
+  else if(e.key==='ArrowUp'||e.key==='ArrowLeft') move(-1);
+  else if(e.key==='Enter') openCurrent();
+  else if(e.key==='Backspace'||e.key==='Escape') goHome();
+  else if(e.key===' '){ e.preventDefault(); togglePlayback(); }
+});
+
+// ─── Global exports for onclick= ──────────────────────────────────────────
+Object.assign(window,{goHome,loadPlaylists,move,openCurrent,saveConfig,selectMenu,selectVideo,setTheme,signIn,togglePlayback});
+
+// ─── Init ─────────────────────────────────────────────────────────────────
+restoreConfig();
+markStep(1, cidInput.value ? 'done' : 'active');
+markStep(2, 'active');
+markStep(3, 'active');
+renderHome();
+handleOAuthRedirect(); // picks up token if returning from Google redirect
+</script>
+</body>
+</html>
