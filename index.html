@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-<title>ClickWheel — v5</title>
+<title>ClickWheel — v7</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://www.youtube.com/iframe_api"></script>
 <style>
 :root {
   --shell-w: 340px;
@@ -21,14 +20,9 @@
   --accent-2: #9b7bff;
   --good: #5edb97;
   --bad: #f97070;
-  --row: #141720;
-  --row-active: #1e3a6e;
-  --row-border: rgba(255,255,255,.05);
-  --wheel-face: #1c1f2e;
-  --wheel-ring: #2a2e40;
-  --wheel-btn: #eef1f8;
-  --wheel-center: #262a3d;
   --line: rgba(255,255,255,.07);
+  --wheel-ring: #2a2e40;
+  --wheel-center: #262a3d;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -40,9 +34,7 @@ html, body {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
-body {
-  display: flex; align-items: center; justify-content: center;
-}
+body { display: flex; align-items: center; justify-content: center; }
 
 /* ── Shell ── */
 .ipod {
@@ -54,50 +46,28 @@ body {
     0 0 0 1px rgba(255,255,255,.08),
     0 30px 80px rgba(0,0,0,.7),
     inset 0 1px 0 rgba(255,255,255,.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
 }
 
 /* ── Screen ── */
 .screen-wrap {
-  width: 100%;
-  height: var(--screen-h);
+  width: 100%; height: var(--screen-h);
   border-radius: 20px;
   background: var(--screen-bg);
   border: 1px solid rgba(255,255,255,.06);
   box-shadow: inset 0 0 40px rgba(0,0,0,.6), 0 2px 10px rgba(0,0,0,.4);
   overflow: hidden;
-  position: relative;
 }
-
-/* Status bar */
 .status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px 6px;
-  font-size: 11px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--line);
-  letter-spacing: .02em;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px 6px; font-size: 11px; color: var(--muted);
+  border-bottom: 1px solid var(--line); letter-spacing: .02em;
 }
 .status-bar .app-name { color: var(--text); font-weight: 600; font-size: 12px; }
-.status-bar .auth-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--bad); display: inline-block; margin-right: 5px;
-  vertical-align: middle;
-}
-.status-bar .auth-dot.on { background: var(--good); }
+.auth-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--bad); display: inline-block; margin-right: 5px; vertical-align: middle; }
+.auth-dot.on { background: var(--good); }
 
-/* Screen content — no scrolling, wheel does it */
-.screen-content {
-  height: calc(var(--screen-h) - 34px);
-  overflow: hidden;
-  position: relative;
-}
+.screen-content { height: calc(var(--screen-h) - 34px); overflow: hidden; position: relative; }
 
 .view {
   position: absolute; inset: 0;
@@ -107,65 +77,38 @@ body {
 }
 .view.active { opacity: 1; pointer-events: all; }
 
-/* View header */
 .view-header {
-  padding: 8px 12px 6px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--accent);
-  border-bottom: 1px solid var(--line);
-  flex: 0 0 auto;
+  padding: 8px 12px 6px; font-size: 13px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--accent);
+  border-bottom: 1px solid var(--line); flex: 0 0 auto;
 }
 
 /* Menu rows */
-.menu-list {
-  flex: 1; overflow: hidden;
-  display: flex; flex-direction: column;
-  gap: 1px;
-  padding: 4px 0;
-}
+.menu-list { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 1px; padding: 4px 0; }
 .menu-row {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 12px;
-  font-size: 14px;
-  background: transparent;
-  border-left: 2px solid transparent;
-  transition: background .1s, border-color .1s;
-  flex: 0 0 auto;
-  cursor: default;
+  padding: 9px 12px; font-size: 14px; background: transparent;
+  border-left: 2px solid transparent; flex: 0 0 auto; cursor: default;
 }
-.menu-row.sel {
-  background: rgba(79,156,249,.13);
-  border-left-color: var(--accent);
-  color: #fff;
-}
+.menu-row.sel { background: rgba(79,156,249,.13); border-left-color: var(--accent); color: #fff; }
 .menu-row .row-left { display: flex; align-items: center; gap: 9px; }
 .menu-row .row-icon {
   width: 24px; height: 24px; border-radius: 7px;
-  display: grid; place-items: center;
-  font-size: 13px;
-  background: rgba(255,255,255,.07);
-  flex: 0 0 auto;
+  display: grid; place-items: center; font-size: 13px;
+  background: rgba(255,255,255,.07); flex: 0 0 auto;
 }
 .menu-row .row-chev { color: var(--muted); font-size: 12px; }
 
-/* Now playing bar */
+/* Now-playing bar */
 .now-bar {
-  flex: 0 0 auto;
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px;
-  border-top: 1px solid var(--line);
-  background: rgba(0,0,0,.3);
-  font-size: 11px;
-  color: var(--muted);
-  min-height: 32px;
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-top: 1px solid var(--line);
+  background: rgba(0,0,0,.3); font-size: 11px; color: var(--muted); min-height: 32px;
 }
 .now-bar .track-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 12px; }
 .now-bar .play-state { color: var(--accent); font-size: 14px; }
 
-/* Playlist rows */
+/* Playlist/track rows */
 .playlist-list { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 1px; padding: 4px 0; }
 .playlist-row {
   display: flex; align-items: center; gap: 9px;
@@ -176,14 +119,34 @@ body {
 .playlist-row .track-num { color: var(--muted); font-size: 11px; min-width: 22px; text-align: right; }
 .playlist-row .track-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Settings form */
+/* Now Playing screen */
+.np-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
+.np-art {
+  width: 100px; height: 100px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 10px 28px rgba(0,0,0,.5);
+  display: grid; place-items: center; font-size: 38px; flex: 0 0 auto;
+}
+.np-title { font-size: 14px; font-weight: 700; text-align: center; line-height: 1.3; }
+.np-sub   { font-size: 11px; color: var(--muted); text-align: center; }
+.np-open-btn {
+  margin-top: 6px;
+  padding: 8px 20px; border-radius: 999px;
+  background: var(--accent); color: #000;
+  border: none; font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+}
+.np-open-btn:active { opacity: .8; }
+.np-hint { font-size: 10px; color: var(--muted); text-align: center; }
+
+/* Settings */
 .settings-body { flex: 1; overflow: hidden; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
 .setting-row { display: flex; flex-direction: column; gap: 4px; }
 .setting-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .setting-val {
   font-size: 12px; color: var(--text);
-  background: rgba(255,255,255,.05);
-  border: 1px solid var(--line);
+  background: rgba(255,255,255,.05); border: 1px solid var(--line);
   border-radius: 8px; padding: 7px 10px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -194,35 +157,26 @@ body {
 .setting-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .setting-btn {
   padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.07); color: var(--text); font-size: 12px; cursor: pointer;
-  font-family: inherit;
+  background: rgba(255,255,255,.07); color: var(--text); font-size: 12px; cursor: pointer; font-family: inherit;
 }
 .setting-btn:active { background: rgba(255,255,255,.14); }
 .setting-btn.primary { background: var(--accent); color: #000; border-color: transparent; font-weight: 600; }
 
-/* Cover art view */
-.cover-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; }
-.cover-art {
-  width: 110px; height: 110px; border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  box-shadow: 0 12px 30px rgba(0,0,0,.5);
-  display: grid; place-items: center; font-size: 40px;
+/* ── Home button ── */
+.home-btn-wrap { width: 100%; display: flex; justify-content: center; }
+.home-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 22px; border-radius: 999px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.11);
+  color: rgba(255,255,255,.6); font-size: 12px; font-family: inherit;
+  font-weight: 600; letter-spacing: .04em; cursor: pointer;
 }
-.cover-title { font-size: 15px; font-weight: 700; text-align: center; }
-.cover-sub   { font-size: 12px; color: var(--muted); text-align: center; }
-.progress-wrap { width: 100%; height: 3px; background: rgba(255,255,255,.1); border-radius: 2px; margin-top: 4px; }
-.progress-bar  { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 1s linear; }
+.home-btn:active { background: rgba(255,255,255,.14); color: #fff; }
 
 /* ── Wheel ── */
-.wheel-wrap {
-  position: relative;
-  width: var(--wheel-d);
-  height: var(--wheel-d);
-  flex: 0 0 auto;
-}
+.wheel-wrap { position: relative; width: var(--wheel-d); height: var(--wheel-d); flex: 0 0 auto; }
 .wheel-ring {
-  position: absolute; inset: 0;
-  border-radius: 50%;
+  position: absolute; inset: 0; border-radius: 50%;
   background: radial-gradient(circle at 35% 28%, #2e3350, var(--wheel-ring) 70%);
   box-shadow:
     0 0 0 1px rgba(255,255,255,.07),
@@ -235,112 +189,44 @@ body {
   color: rgba(255,255,255,.55); font-size: 11px; font-weight: 700; letter-spacing: .06em;
   pointer-events: none; text-transform: uppercase;
 }
-.wheel-label.top    { top: 16px;  left: 50%; transform: translateX(-50%); }
-.wheel-label.left   { left: 14px; top: 50%;  transform: translateY(-50%); font-size: 18px; }
-.wheel-label.right  { right: 14px;top: 50%;  transform: translateY(-50%); font-size: 18px; }
+.wheel-label.top    { top: 16px; left: 50%; transform: translateX(-50%); }
+.wheel-label.left   { left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; }
+.wheel-label.right  { right: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; }
 .wheel-label.bottom { bottom: 16px; left: 50%; transform: translateX(-50%); }
-
 .wheel-center {
-  position: absolute;
-  width: 96px; height: 96px;
+  position: absolute; width: 96px; height: 96px;
   top: 50%; left: 50%; transform: translate(-50%,-50%);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #31364d, var(--wheel-center) 80%);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.09),
-    inset 0 2px 3px rgba(255,255,255,.08),
-    0 4px 14px rgba(0,0,0,.5);
-  cursor: pointer;
-  display: grid; place-items: center;
-  transition: background .12s;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.09), inset 0 2px 3px rgba(255,255,255,.08), 0 4px 14px rgba(0,0,0,.5);
+  cursor: pointer; display: grid; place-items: center; transition: background .12s;
 }
 .wheel-center:active { background: radial-gradient(circle at 35% 30%, #3d4460, #2a2f45 80%); }
-.wheel-center-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: rgba(255,255,255,.2);
-}
+.wheel-center-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.2); }
 
-/* ── YT placeholder slot in Now Playing ── */
-.yt-wrap {
-  width: 100%; flex: 0 0 auto;
-  background: #000;
-  overflow: hidden;
-  transition: height .25s ease;
-}
-.yt-wrap.visible { height: 140px; }
-.yt-wrap.hidden  { height: 0; }
-
-/* ── Floating YT iframe — lives outside views so it never gets hidden ── */
-#ytFloatWrap {
-  position: fixed;
-  z-index: 10;
-  background: #000;
-  overflow: hidden;
-  transition: opacity .2s, height .25s ease;
-  pointer-events: auto;
-}
-#ytFloatWrap.video-hidden { opacity: 0; pointer-events: none; height: 0 !important; }
-#ytPlayer { width: 100%; height: 100%; border: none; display: block; }
-
-/* ── Home button (outside wheel) ── */
-.home-btn-wrap {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-.home-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 22px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(255,255,255,.11);
-  color: rgba(255,255,255,.6);
-  font-size: 12px;
-  font-family: inherit;
-  font-weight: 600;
-  letter-spacing: .04em;
-  cursor: pointer;
-  transition: background .12s, color .12s;
-}
-.home-btn:active { background: rgba(255,255,255,.14); color: #fff; }
-.home-btn .hb-icon { font-size: 14px; }
-
-/* ── Scale iPod to fit any screen ── */
-.ipod-scaler {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100vw;
-  height: 100dvh;
-}
-@media (max-height: 720px) {
-  :root { --shell-w: 300px; --screen-h: 260px; --wheel-d: 225px; }
-}
-@media (max-height: 640px) {
-  :root { --shell-w: 280px; --screen-h: 230px; --wheel-d: 200px; }
-}
-@media (max-height: 580px) {
-  :root { --shell-w: 260px; --screen-h: 200px; --wheel-d: 185px; }
-}
+/* ── Responsive ── */
+@media (max-height: 720px) { :root { --shell-w: 300px; --screen-h: 260px; --wheel-d: 225px; } }
+@media (max-height: 640px) { :root { --shell-w: 280px; --screen-h: 230px; --wheel-d: 200px; } }
+@media (max-height: 580px) { :root { --shell-w: 260px; --screen-h: 200px; --wheel-d: 185px; } }
 </style>
 </head>
 <body>
 
-<div class="ipod" id="ipod">
+<div class="ipod">
   <!-- Screen -->
   <div class="screen-wrap">
     <div class="status-bar">
       <span class="app-name">ClickWheel</span>
       <span><span class="auth-dot" id="authDot"></span><span id="authLabel">Not signed in</span></span>
     </div>
-    <div class="screen-content" id="screenContent">
+    <div class="screen-content">
 
       <!-- HOME -->
       <div class="view active" id="view-home">
         <div class="menu-list" id="home-list"></div>
-        <div class="now-bar" id="now-bar">
-          <span class="play-state" id="play-icon">♪</span>
-          <span class="track-name" id="now-title">Nothing playing</span>
+        <div class="now-bar">
+          <span class="play-state">♪</span>
+          <span class="track-name" id="now-title">Nothing selected</span>
         </div>
       </div>
 
@@ -349,8 +235,8 @@ body {
         <div class="view-header">Playlists</div>
         <div class="menu-list" id="playlist-list"></div>
         <div class="now-bar">
-          <span class="play-state" id="play-icon2">♪</span>
-          <span class="track-name" id="now-title2">Nothing playing</span>
+          <span class="play-state">♪</span>
+          <span class="track-name" id="now-title2">Nothing selected</span>
         </div>
       </div>
 
@@ -360,23 +246,21 @@ body {
         <div class="playlist-list" id="tracks-list"></div>
         <div class="now-bar">
           <span class="play-state">▶</span>
-          <span class="track-name" id="now-title3">Nothing playing</span>
+          <span class="track-name" id="now-title3">Nothing selected</span>
         </div>
       </div>
 
       <!-- NOW PLAYING -->
       <div class="view" id="view-nowplaying">
-        <div class="view-header" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>Now Playing</span>
-          <button onclick="toggleVideoVisible()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:10px;padding:2px 9px;border-radius:999px;cursor:pointer;font-family:inherit;" id="vid-toggle-btn">Hide Video</button>
-        </div>
-        <!-- Placeholder div — ytPlayer iframe floats over this slot -->
-        <div class="yt-wrap visible" id="ytWrap" style="background:#000;"></div>
-        <!-- Track info below video -->
-        <div class="cover-view" style="flex:1;padding:8px 16px;gap:6px;">
-          <div class="cover-title" id="np-title" style="font-size:13px;">—</div>
-          <div class="cover-sub"   id="np-sub"   style="font-size:11px;">—</div>
-          <div class="progress-wrap" style="margin-top:4px;"><div class="progress-bar" id="np-prog"></div></div>
+        <div class="view-header">Now Playing</div>
+        <div class="np-view">
+          <div class="np-art">🎵</div>
+          <div class="np-title" id="np-title">—</div>
+          <div class="np-sub"   id="np-sub">—</div>
+          <button class="np-open-btn" onclick="openInYouTube()">
+            ▶ Open in YouTube
+          </button>
+          <div class="np-hint">Opens YouTube app with your Premium account</div>
         </div>
       </div>
 
@@ -396,9 +280,7 @@ body {
           <div class="setting-actions">
             <button class="setting-btn" onclick="pressMenu()">⬅ Back to Home</button>
           </div>
-          <div class="setting-hint">
-            After signing in, press MENU on the wheel or tap Back to go to Playlists.
-          </div>
+          <div class="setting-hint">After signing in, press MENU → Playlists.</div>
         </div>
       </div>
 
@@ -407,9 +289,7 @@ body {
 
   <!-- Home button -->
   <div class="home-btn-wrap">
-    <button class="home-btn" onclick="pressMenu()">
-      <span class="hb-icon">⌂</span> HOME
-    </button>
+    <button class="home-btn" onclick="pressMenu()">⌂ HOME</button>
   </div>
 
   <!-- Click Wheel -->
@@ -423,11 +303,6 @@ body {
       <div class="wheel-center-dot"></div>
     </div>
   </div>
-</div>
-
-<!-- Persistent YT player — outside all views so it's always rendered -->
-<div id="ytFloatWrap" style="top:-9999px;left:-9999px;width:1px;height:1px;">
-  <div id="ytPlayer"></div>
 </div>
 
 <script>
@@ -444,64 +319,38 @@ const S = {
   selTrack: 0,
   selHome: 0,
   currentView: 'home',
-  player: null,
-  playerReady: false,
-  playing: false,
+  currentVideoId: '',
   currentTitle: '',
   currentSub: '',
 };
 
 const HOME_MENU = [
-  { id:'nowplaying', label:'Now Playing', icon:'▶' },
-  { id:'playlists',  label:'Playlists',   icon:'♫' },
-  { id:'settings',   label:'Settings',    icon:'⚙' },
+  { id: 'nowplaying', label: 'Now Playing', icon: '▶' },
+  { id: 'playlists',  label: 'Playlists',   icon: '♫' },
+  { id: 'settings',   label: 'Settings',    icon: '⚙' },
 ];
 
-// ─── DOM refs ──────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
 // ─── View routing ──────────────────────────────────────────────────────────
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(id).classList.add('active');
-  S.currentView = id.replace('view-','');
-  // rAF so layout is flushed before we measure slot position
-  requestAnimationFrame(positionFloatPlayer);
+  S.currentView = id.replace('view-', '');
 }
 
-function positionFloatPlayer() {
-  const fw = $('ytFloatWrap');
-  const wrap = $('ytWrap');
-  if (S.currentView === 'nowplaying' && videoVisible && wrap) {
-    // Position the float wrap exactly over the placeholder slot
-    const r = wrap.getBoundingClientRect();
-    fw.style.top    = r.top  + 'px';
-    fw.style.left   = r.left + 'px';
-    fw.style.width  = r.width  + 'px';
-    fw.style.height = r.height + 'px';
-    fw.classList.remove('video-hidden');
-  } else {
-    fw.style.top = '-9999px'; fw.style.left = '-9999px';
-    fw.style.width = '1px';  fw.style.height = '1px';
-    fw.classList.add('video-hidden');
-  }
-}
-
-// ─── Home menu render ──────────────────────────────────────────────────────
+// ─── Renders ───────────────────────────────────────────────────────────────
 function renderHome() {
-  const list = $('home-list');
-  list.innerHTML = HOME_MENU.map((item, i) => `
-    <div class="menu-row ${i === S.selHome ? 'sel' : ''}" data-idx="${i}">
+  $('home-list').innerHTML = HOME_MENU.map((item, i) => `
+    <div class="menu-row ${i === S.selHome ? 'sel' : ''}">
       <div class="row-left">
         <div class="row-icon">${item.icon}</div>
         <span>${item.label}</span>
       </div>
       <span class="row-chev">›</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-// ─── Playlists render ──────────────────────────────────────────────────────
 function renderPlaylists() {
   const list = $('playlist-list');
   if (!S.playlists.length) {
@@ -509,58 +358,75 @@ function renderPlaylists() {
     return;
   }
   list.innerHTML = S.playlists.map((p, i) => `
-    <div class="menu-row ${i === S.selPlaylist ? 'sel' : ''}" data-idx="${i}">
+    <div class="menu-row ${i === S.selPlaylist ? 'sel' : ''}">
       <div class="row-left">
         <div class="row-icon">♫</div>
         <span>${esc(p.snippet?.title || 'Untitled')}</span>
       </div>
       <span class="row-chev">›</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-// ─── Tracks render ─────────────────────────────────────────────────────────
 function renderTracks() {
-  const list = $('tracks-list');
-  list.innerHTML = S.videos.map((v, i) => `
-    <div class="playlist-row ${i === S.selTrack ? 'sel' : ''}" data-idx="${i}">
+  $('tracks-list').innerHTML = S.videos.map((v, i) => `
+    <div class="playlist-row ${i === S.selTrack ? 'sel' : ''}">
       <span class="track-num">${String(i+1).padStart(2,'0')}</span>
       <span class="track-title">${esc(v.snippet?.title || 'Untitled')}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-// ─── Scroll selected row into view inside fixed-height list ────────────────
 function scrollSelIntoView(listId, selClass) {
   const list = $(listId);
   const sel  = list?.querySelector(selClass);
   if (!sel || !list) return;
-  const lTop = list.scrollTop;
-  const lH   = list.clientHeight;
-  const sTop = sel.offsetTop;
-  const sH   = sel.clientHeight;
+  const lTop = list.scrollTop, lH = list.clientHeight;
+  const sTop = sel.offsetTop,  sH = sel.clientHeight;
   if (sTop < lTop) list.scrollTop = sTop;
   else if (sTop + sH > lTop + lH) list.scrollTop = sTop + sH - lH;
 }
 
-// ─── Now playing bar sync ──────────────────────────────────────────────────
 function syncNowBar() {
-  const icon  = S.playing ? '▶' : '♪';
-  $('play-icon').textContent  = icon;
-  $('play-icon2').textContent = icon;
-  $('now-title').textContent  = S.currentTitle || 'Nothing playing';
-  $('now-title2').textContent = S.currentTitle || 'Nothing playing';
-  $('now-title3').textContent = S.currentTitle || 'Nothing playing';
+  const label = S.currentTitle || 'Nothing selected';
+  $('now-title').textContent  = label;
+  $('now-title2').textContent = label;
+  $('now-title3').textContent = label;
   $('np-title').textContent   = S.currentTitle || '—';
   $('np-sub').textContent     = S.currentSub   || '—';
 }
 
-// ─── Auth / UI ─────────────────────────────────────────────────────────────
+// ─── YouTube deep-link handoff ─────────────────────────────────────────────
+function selectTrack(item) {
+  const vid   = item.contentDetails?.videoId;
+  const title = item.snippet?.title || 'Untitled';
+  if (!vid) return;
+  S.currentVideoId = vid;
+  S.currentTitle   = title;
+  S.currentSub     = S.playlists[S.selPlaylist]?.snippet?.title || '';
+  syncNowBar();
+  showView('view-nowplaying');
+}
+
+function openInYouTube() {
+  if (!S.currentVideoId) return;
+  // Try YouTube app deep link first, fall back to Safari
+  const appUrl     = `youtube://www.youtube.com/watch?v=${S.currentVideoId}`;
+  const webUrl     = `https://www.youtube.com/watch?v=${S.currentVideoId}`;
+  const start      = Date.now();
+  const fallback   = setTimeout(() => { window.location.href = webUrl; }, 1000);
+  window.location.href = appUrl;
+  // If app opened, cancel the Safari fallback
+  window.addEventListener('blur', () => clearTimeout(fallback), { once: true });
+  // Also cancel if we come back quickly (app not installed)
+  setTimeout(() => {
+    if (Date.now() - start < 1500) clearTimeout(fallback);
+  }, 1500);
+}
+
+// ─── Auth ──────────────────────────────────────────────────────────────────
 function setAuth(ok, label) {
   $('authDot').className  = 'auth-dot' + (ok ? ' on' : '');
   $('authLabel').textContent = label;
 }
-
 function setMsg(msg, cls) {
   const el = $('settings-msg');
   el.textContent = msg;
@@ -569,21 +435,19 @@ function setMsg(msg, cls) {
 
 function doSignIn() {
   if (window.google?.accounts?.oauth2) {
-    const tc = google.accounts.oauth2.initTokenClient({
+    google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID, scope: SCOPE,
       callback(resp) {
         if (resp?.access_token) {
           S.token = resp.access_token;
           setAuth(true, 'Connected');
-          setMsg('Signed in! Select Load playlists.', 'good');
+          setMsg('Signed in! Tap Load playlists.', 'good');
         } else {
           setMsg('Sign-in failed.', 'bad');
         }
       }
-    });
-    tc.requestAccessToken({ prompt: 'consent' });
+    }).requestAccessToken({ prompt: 'consent' });
   } else {
-    // Redirect fallback
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.searchParams.set('client_id', CLIENT_ID);
     url.searchParams.set('redirect_uri', location.origin + location.pathname);
@@ -601,7 +465,7 @@ function handleRedirect() {
   if (t) {
     S.token = t;
     setAuth(true, 'Connected');
-    setMsg('Signed in! Select Load playlists.', 'good');
+    setMsg('Signed in! Tap Load playlists.', 'good');
     history.replaceState(null, '', location.pathname);
   }
 }
@@ -617,10 +481,10 @@ async function doLoadPlaylists() {
   setMsg('Loading…', 'bad');
   try {
     const url = new URL('https://www.googleapis.com/youtube/v3/playlists');
-    url.searchParams.set('part','snippet,contentDetails');
-    url.searchParams.set('mine','true');
-    url.searchParams.set('maxResults','50');
-    const data = await ytFetch(url.toString());
+    url.searchParams.set('part', 'snippet,contentDetails');
+    url.searchParams.set('mine', 'true');
+    url.searchParams.set('maxResults', '50');
+    const data  = await ytFetch(url.toString());
     S.playlists = data.items || [];
     setMsg(`Loaded ${S.playlists.length} playlists.`, 'good');
     renderPlaylists();
@@ -634,57 +498,18 @@ async function loadPlaylistTracks(idx) {
   if (!pl) return;
   try {
     const url = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
-    url.searchParams.set('part','snippet,contentDetails');
+    url.searchParams.set('part', 'snippet,contentDetails');
     url.searchParams.set('playlistId', pl.id);
-    url.searchParams.set('maxResults','50');
-    const data = await ytFetch(url.toString());
+    url.searchParams.set('maxResults', '50');
+    const data  = await ytFetch(url.toString());
     S.videos    = (data.items || []).filter(i => i.contentDetails?.videoId);
     S.selTrack  = 0;
     $('tracks-header').textContent = pl.snippet?.title || 'Tracks';
     renderTracks();
     showView('view-tracks');
-    if (S.videos.length) playVideo(S.videos[0]);
   } catch(e) {
     setMsg('Track load error: ' + String(e.message||e).slice(0,80), 'bad');
   }
-}
-
-// ─── Playback ───────────────────────────────────────────────────────────────
-function onYouTubeIframeAPIReady() { S.playerReady = true; }
-
-function playVideo(item) {
-  const vid   = item.contentDetails?.videoId;
-  const title = item.snippet?.title || 'Untitled';
-  if (!vid) return;
-  S.currentTitle = title;
-  S.currentSub   = S.playlists[S.selPlaylist]?.snippet?.title || '';
-  S.playing = true;
-  syncNowBar();
-
-  if (S.player?.loadVideoById) {
-    S.player.loadVideoById({ videoId: vid, suggestedQuality: 'small' });
-    return;
-  }
-  if (!window.YT?.Player) { setTimeout(() => playVideo(item), 800); return; }
-  S.player = new YT.Player('ytPlayer', {
-    height: '1', width: '1', videoId: vid,
-    playerVars: { controls: 1, playsinline: 1, rel: 0, vq: 'small' },
-    events: {
-      onReady(e) { S.playerReady = true; e.target.setPlaybackQuality('small'); e.target.playVideo(); },
-      onStateChange(e) {
-        S.playing = (e.data === YT.PlayerState.PLAYING);
-        syncNowBar();
-      }
-    }
-  });
-}
-
-function togglePlay() {
-  if (!S.player?.getPlayerState) return;
-  const st = S.player.getPlayerState();
-  if (st === YT.PlayerState.PLAYING) { S.player.pauseVideo(); S.playing = false; }
-  else { S.player.playVideo(); S.playing = true; }
-  syncNowBar();
 }
 
 // ─── Navigation ─────────────────────────────────────────────────────────────
@@ -694,11 +519,11 @@ function selectRow(delta) {
     renderHome();
     scrollSelIntoView('home-list', '.menu-row.sel');
   } else if (S.currentView === 'playlists') {
-    S.selPlaylist = (S.selPlaylist + delta + Math.max(S.playlists.length, 1)) % Math.max(S.playlists.length, 1);
+    S.selPlaylist = (S.selPlaylist + delta + Math.max(S.playlists.length,1)) % Math.max(S.playlists.length,1);
     renderPlaylists();
     scrollSelIntoView('playlist-list', '.menu-row.sel');
   } else if (S.currentView === 'tracks') {
-    S.selTrack = (S.selTrack + delta + Math.max(S.videos.length, 1)) % Math.max(S.videos.length, 1);
+    S.selTrack = (S.selTrack + delta + Math.max(S.videos.length,1)) % Math.max(S.videos.length,1);
     renderTracks();
     scrollSelIntoView('tracks-list', '.playlist-row.sel');
   }
@@ -707,14 +532,16 @@ function selectRow(delta) {
 function pressCenter() {
   if (S.currentView === 'home') {
     const item = HOME_MENU[S.selHome];
-    if (item.id === 'playlists')   { renderPlaylists(); showView('view-playlists'); }
-    else if (item.id === 'settings') showView('view-settings');
+    if (item.id === 'playlists')    { renderPlaylists(); showView('view-playlists'); }
+    else if (item.id === 'settings')  showView('view-settings');
     else if (item.id === 'nowplaying') showView('view-nowplaying');
   } else if (S.currentView === 'playlists') {
     if (S.playlists.length) loadPlaylistTracks(S.selPlaylist);
   } else if (S.currentView === 'tracks') {
     const v = S.videos[S.selTrack];
-    if (v) { playVideo(v); showView('view-nowplaying'); }
+    if (v) selectTrack(v);
+  } else if (S.currentView === 'nowplaying') {
+    openInYouTube();
   }
 }
 
@@ -724,52 +551,62 @@ function pressMenu() {
   else if (S.currentView === 'tracks') { renderPlaylists(); showView('view-playlists'); }
 }
 
-function pressPlay() { togglePlay(); }
-function pressPrev() { selectRow(-1); }
-function pressNext() { selectRow(1); }
+function pressPrev() {
+  if (S.currentView === 'nowplaying' && S.videos.length) {
+    S.selTrack = (S.selTrack - 1 + S.videos.length) % S.videos.length;
+    selectTrack(S.videos[S.selTrack]);
+  } else { selectRow(-1); }
+}
 
-// ─── Keyboard support ───────────────────────────────────────────────────────
+function pressNext() {
+  if (S.currentView === 'nowplaying' && S.videos.length) {
+    S.selTrack = (S.selTrack + 1) % S.videos.length;
+    selectTrack(S.videos[S.selTrack]);
+  } else { selectRow(1); }
+}
+
+function pressPlay() {
+  if (S.currentView === 'nowplaying') openInYouTube();
+}
+
+// ─── Keyboard ───────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  selectRow(-1);
-  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') selectRow(1);
-  if (e.key === 'Enter') pressCenter();
+  if (e.key === 'ArrowUp')    selectRow(-1);
+  if (e.key === 'ArrowDown')  selectRow(1);
+  if (e.key === 'ArrowLeft')  pressPrev();
+  if (e.key === 'ArrowRight') pressNext();
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pressCenter(); }
   if (e.key === 'Backspace' || e.key === 'Escape') pressMenu();
-  if (e.key === ' ') { e.preventDefault(); pressPlay(); }
 });
 
-// ─── Click Wheel — rotary gesture + tap zones ───────────────────────────────
+// ─── Click Wheel ─────────────────────────────────────────────────────────────
 (function() {
   const ring   = $('wheelRing');
   const center = $('wheelCenter');
   const wrap   = $('wheelWrap');
 
-  // Tap zones on ring — shared handler used by both click and touchend
   function fireTapZone(clientX, clientY) {
-    const rect = ring.getBoundingClientRect();
-    const cx   = rect.left + rect.width  / 2;
-    const cy   = rect.top  + rect.height / 2;
-    const dx   = clientX - cx;
-    const dy   = clientY - cy;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    const r    = rect.width / 2;
-    if (dist < r * 0.38 || dist > r * 0.97) return; // center or outside ring
+    const rect  = ring.getBoundingClientRect();
+    const cx    = rect.left + rect.width  / 2;
+    const cy    = rect.top  + rect.height / 2;
+    const dx    = clientX - cx, dy = clientY - cy;
+    const dist  = Math.sqrt(dx*dx + dy*dy);
+    const r     = rect.width / 2;
+    if (dist < r * 0.38 || dist > r * 0.97) return;
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     if (angle > -135 && angle < -45)      pressMenu(); // top
     else if (angle >= -45 && angle < 45)  pressNext(); // right
     else if (angle >= 45 && angle < 135)  pressPlay(); // bottom
-    else                                  pressMenu(); // left
+    else                                  pressPrev(); // left
   }
 
-  // Mouse click (desktop)
   ring.addEventListener('click', e => fireTapZone(e.clientX, e.clientY));
-
   center.addEventListener('click', e => { e.stopPropagation(); pressCenter(); });
   center.addEventListener('touchend', e => { e.stopPropagation(); e.preventDefault(); pressCenter(); }, { passive: false });
 
-  // ── Rotary drag ────────────────────────────────────────────────────────
-  let lastAngle = null;
-  let accum     = 0;
-  const STEP    = 30; // degrees per scroll tick
+  // ── Rotary drag ────────────────────────────────────────────────────────────
+  let lastAngle = null, accum = 0, startX = null, startY = null, didDrag = false;
+  const STEP = 30;
 
   function getAngle(e, rect) {
     const cx = rect.left + rect.width  / 2;
@@ -782,21 +619,18 @@ document.addEventListener('keydown', e => {
   function isOnRing(e, rect) {
     const cx   = rect.left + rect.width  / 2;
     const cy   = rect.top  + rect.height / 2;
-    const px   = (e.touches ? e.touches[0].clientX : e.clientX);
-    const py   = (e.touches ? e.touches[0].clientY : e.clientY);
+    const px   = e.touches ? e.touches[0].clientX : e.clientX;
+    const py   = e.touches ? e.touches[0].clientY : e.clientY;
     const dist = Math.sqrt((px-cx)**2 + (py-cy)**2);
     const r    = rect.width / 2;
     return dist > r * 0.38 && dist < r * 0.96;
   }
 
-  let startX = null, startY = null, didDrag = false;
-
   function onStart(e) {
     const rect = wrap.getBoundingClientRect();
     if (!isOnRing(e, rect)) return;
     lastAngle = getAngle(e, rect);
-    accum = 0;
-    didDrag = false;
+    accum = 0; didDrag = false;
     startX = e.touches ? e.touches[0].clientX : e.clientX;
     startY = e.touches ? e.touches[0].clientY : e.clientY;
     e.preventDefault();
@@ -807,7 +641,6 @@ document.addEventListener('keydown', e => {
     const rect  = wrap.getBoundingClientRect();
     const angle = getAngle(e, rect);
     let delta   = angle - lastAngle;
-    // Wrap around ±180
     if (delta > 180)  delta -= 360;
     if (delta < -180) delta += 360;
     accum += delta;
@@ -819,55 +652,27 @@ document.addEventListener('keydown', e => {
   }
 
   function onEnd(e) {
-    // If finger barely moved, treat as a tap on the ring zone
     if (!didDrag && startX !== null) {
       const ex = e.changedTouches ? e.changedTouches[0].clientX : startX;
       const ey = e.changedTouches ? e.changedTouches[0].clientY : startY;
-      const dx = ex - startX, dy = ey - startY;
-      const moved = Math.sqrt(dx*dx + dy*dy);
-      if (moved < 12) fireTapZone(ex, ey);
+      if (Math.sqrt((ex-startX)**2 + (ey-startY)**2) < 12) fireTapZone(ex, ey);
     }
     lastAngle = null; accum = 0; startX = null; startY = null; didDrag = false;
   }
 
-  // Touch
   wrap.addEventListener('touchstart', onStart, { passive: false });
   wrap.addEventListener('touchmove',  onMove,  { passive: false });
   wrap.addEventListener('touchend',   onEnd);
-  // Mouse (desktop)
   wrap.addEventListener('mousedown',  onStart);
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup',   onEnd);
-
-  // Swipe up/down on wheel as alternative
-  let swipeStartY = null;
-  const SWIPE_STEP = 18;
-  wrap.addEventListener('touchstart', e => {
-    swipeStartY = e.touches[0].clientY;
-  }, { passive: true });
-
 })();
 
-// ─── Prevent page scroll on touch ──────────────────────────────────────────
 document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
-// ─── Util ───────────────────────────────────────────────────────────────────
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ─── Video visible toggle ────────────────────────────────────────────────────
-let videoVisible = true;
-function toggleVideoVisible() {
-  videoVisible = !videoVisible;
-  const wrap = $('ytWrap');
-  const btn  = $('vid-toggle-btn');
-  wrap.className = 'yt-wrap ' + (videoVisible ? 'visible' : 'hidden');
-  btn.textContent = videoVisible ? 'Hide Video' : 'Show Video';
-  positionFloatPlayer();
-}
-
-// ─── Init ───────────────────────────────────────────────────────────────────
+// ─── Init ────────────────────────────────────────────────────────────────────
 handleRedirect();
 renderHome();
 showView('view-home');
