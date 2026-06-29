@@ -34,12 +34,14 @@
 html, body {
   height: 100%; width: 100%;
   background: var(--bg);
-  display: flex; align-items: center; justify-content: center;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+}
+body {
+  display: flex; align-items: center; justify-content: center;
 }
 
 /* ── Shell ── */
@@ -261,12 +263,45 @@ html, body {
 /* ── Hidden YT player ── */
 #ytPlayer { position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 
-/* ── Responsive: scale the whole iPod ── */
-@media (max-height: 720px) {
-  :root { --shell-w: 300px; --screen-h: 270px; --wheel-d: 230px; }
+/* ── Home button (outside wheel) ── */
+.home-btn-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
-@media (max-height: 600px) {
-  :root { --shell-w: 270px; --screen-h: 240px; --wheel-d: 200px; }
+.home-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 22px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.11);
+  color: rgba(255,255,255,.6);
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.home-btn:active { background: rgba(255,255,255,.14); color: #fff; }
+.home-btn .hb-icon { font-size: 14px; }
+
+/* ── Scale iPod to fit any screen ── */
+.ipod-scaler {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+}
+@media (max-height: 720px) {
+  :root { --shell-w: 300px; --screen-h: 260px; --wheel-d: 225px; }
+}
+@media (max-height: 640px) {
+  :root { --shell-w: 280px; --screen-h: 230px; --wheel-d: 200px; }
+}
+@media (max-height: 580px) {
+  :root { --shell-w: 260px; --screen-h: 200px; --wheel-d: 185px; }
 }
 </style>
 </head>
@@ -344,6 +379,13 @@ html, body {
       </div>
 
     </div>
+  </div>
+
+  <!-- Home button -->
+  <div class="home-btn-wrap">
+    <button class="home-btn" onclick="pressMenu()">
+      <span class="hb-icon">⌂</span> HOME
+    </button>
   </div>
 
   <!-- Click Wheel -->
